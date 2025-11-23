@@ -1,0 +1,79 @@
+# Configuración del sistema de búsqueda
+
+# Configuración general
+default_mode: "hybrid"
+default_top_k: 10
+enable_expansion: true
+enable_feedback: true
+min_score_threshold: 0.1
+
+# Caché de búsqueda
+cache:
+  enabled: true
+  ttl: 3600  # 1 hora
+  max_entries: 10000
+  vacuum_threshold: 0.8
+
+# Expansión de consultas
+query_expansion:
+  max_expansions: 3
+  min_similarity: 0.7
+  use_context: true
+  max_tokens: 512
+  strategies:
+    - entity
+    - semantic
+    - context
+
+# Feedback y diversidad
+feedback:
+  click_window: 86400  # 1 día
+  min_clicks: 5
+  weights:
+    click_score: 0.3
+    diversity: 0.3
+    base_score: 0.4
+  dwell_time:
+    short: 10
+    medium: 30
+    long: 60
+
+# Búsqueda híbrida
+hybrid:
+  bm25_weight: 0.5
+  vector_weight: 0.5
+  score_normalization: true
+  combine_method: "weighted_sum"
+
+# BM25
+bm25:
+  b: 0.75
+  k1: 1.2
+  field_weights:
+    title: 2.0
+    content: 1.0
+    description: 1.5
+
+# Vector
+vector:
+  model: "sentence-transformers/all-MiniLM-L6-v2"
+  dimension: 384
+  metric: "cosine"
+  batch_size: 32
+  use_gpu: true
+
+# Reranking
+reranking:
+  enabled: true
+  model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+  batch_size: 16
+  max_length: 512
+  threshold: 0.5
+
+# Monitoreo
+monitoring:
+  track_latency: true
+  track_cache_hits: true
+  track_expansions: true
+  track_feedback: true
+  metrics_window: 3600  # 1 hora

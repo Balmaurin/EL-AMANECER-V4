@@ -1,0 +1,1 @@
+RAG combina recuperación y generación para mejorar precisión.

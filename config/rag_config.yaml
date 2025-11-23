@@ -1,0 +1,20 @@
+chunking:
+  min_words: 50
+  mode: semantic
+  overlap_words: 30
+  target_words: 200
+embedder:
+  batch_size: 32
+  device: cpu
+  model: BAAI/bge-m3
+  provider: local
+index:
+  backend: hnsw
+  hnsw_ef_construction: 200
+  hnsw_ef_search: 100
+  hnsw_m: 32
+retrieval:
+  hybrid_weight_bm25: 0.4
+  hybrid_weight_vector: 0.6
+  rerank_enabled: false
+  top_k: 10

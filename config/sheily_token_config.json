@@ -1,0 +1,10 @@
+{
+  "mint_address": "4WmWkHmDVo6jSenXamKq39GkwzfDVykjZ5C3tqBVqiYw",
+  "authority": "4WmWkHmDVo6jSenXamKq39GkwzfDVykjZ5C3tqBVqiYw",
+  "decimals": 9,
+  "name": "Sheily Educational Token",
+  "symbol": "SHEILYS",
+  "description": "Token educativo Web3 para aprendizaje y recompensas",
+  "network": "devnet",
+  "supply": 1000000000
+}

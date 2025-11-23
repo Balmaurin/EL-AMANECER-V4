@@ -1,0 +1,46 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+
+# Índices (muy grandes para git)
+index/*.index
+index/*.idx
+index/*.parquet
+index/state.json
+
+# Data (demasiado grande)
+data/*.jsonl
+work/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporal
+*.tmp
+*.bak
+*~
+
+# Bandit
+bandit_low.json
+
+# Bandit reports
+bandit_*.json
+bandit_*.txt

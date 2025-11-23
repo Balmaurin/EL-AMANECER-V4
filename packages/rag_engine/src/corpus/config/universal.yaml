@@ -1,0 +1,127 @@
+
+branch: universal
+embedder:
+  provider: local  # options: local | llamacpp | openai
+  model: sentence-transformers/all-MiniLM-L6-v2
+  device: cpu
+  batch_size: 4
+chunking:
+  mode: "semantic"
+  target_words: 220
+  overlap_words: 40
+  min_words: 60
+index:
+  backend: "hnsw"   # faiss | hnsw
+  faiss:
+    factory: "IVF4096,PQ32"
+    nprobe: 32
+  bm25:
+    whoosh:
+      stored_fields: ["chunk_id","doc_id","title","lang","tags"]
+  raptor:
+    levels: 3
+    k_per_cluster: 8
+graph:
+  build:
+    ner: "simple"
+    min_edge_weight: 2
+retrieval:
+  top_k: 10
+  fuse:
+    method: rrf
+    k: 60
+    weights:
+      faiss: 0.45
+      bm25: 0.25
+      graph: 0.10
+      raptor: 0.10
+      quality: 0.10
+  crag:
+    enabled: true
+    fallbacks:
+      - mode: bm25
+      - mode: vector
+    thresholds:
+      low: 0.25
+      high: 0.65
+  rerank:
+    enabled: true
+    model: BAAI/bge-reranker-base
+    device_hint: cpu
+    top_n: 60
+  lexical:
+    backend: "whoosh"   # opciones: whoosh | tantivy
+    fields: ["title", "text"]  # campos para BM25
+    shards:
+      enabled: false
+      count: 4
+quality:
+  min_text_len: 50
+catalog:
+  duckdb_path: "corpus/_registry/catalog.duckdb"
+api:
+  rate_limit:
+    requests: 60
+    per_seconds: 60
+  security:
+    require_api_key: true
+    cors_origins: ["*"]
+    max_request_bytes: 1048576
+    timeout_seconds: 20
+  metrics:
+    enabled: true
+    path: "/metrics"
+logging:
+  level: INFO
+  file: logs/rag.log
+  format: "%(asctime)s %(levelname)s [%(name)s] %(message)s"
+overrides:
+  env_prefix: "RAG_"
+
+# Ingest settings (OCR)
+ingest:
+  ocr:
+    enabled: true
+    force_ocr: false
+    languages: "spa+eng"
+    max_pages: 200
+
+
+
+
+
+enterprise:
+  ingest:
+    workers: 6
+    max_file_mb: 128
+    skip_hidden: true
+  normalize:
+    min_chars: 800
+    min_quality: 0.55
+    dedup:
+      enabled: true
+      jaccard_threshold: 0.88
+      n_perm: 128
+  chunking:
+    max_words: 250
+    overlap_words: 50
+  embedding:
+    batch_size_adapt: true
+  index:
+    bm25_backend: "whoosh"
+    vector_backend: "hnsw"
+
+
+external_index:
+  type: "local"   # local | qdrant | milvus
+  qdrant:
+    host: "127.0.0.1"
+    port: 6333
+    collection: "rag_universal"
+  milvus:
+    host: "127.0.0.1"
+    port: 19530
+    user: "root"
+    password: ""
+    secure: false
+    collection: "rag_universal"

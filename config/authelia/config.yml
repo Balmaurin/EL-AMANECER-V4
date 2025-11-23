@@ -1,0 +1,164 @@
+---
+# Authelia Configuration - Zero-Trust SSO for Sheily Enterprise
+# Access: https://auth.sheily.yourdomain.com
+
+# Server configuration
+server:
+  address: 'tcp://:9091'
+
+# API endpoints configuration
+api:
+  endpoints:
+    - name: 'authz'
+      implementation: 'Authz'
+      configuration:
+        authn_strategies:
+          - name: 'AllowAPIKeyAuth'
+
+# NTP server for time synchronization
+ntp:
+  address: "time.cloudflare.com"
+  version: 4
+  max_desync: "3s"
+  disable_startup_check: false
+
+# Logging configuration
+log:
+  level: 'debug'
+
+# JWT secret for session management
+jwt_secret: ${AUTHELIA_JWT_SECRET}
+
+# TOTP configuration for 2FA
+totp:
+  disable: false
+  issuer: sheily-ai.com
+  algorithm: SHA1
+  digits: 6
+  period: 30
+  skew: 1
+  secret_size: 32
+
+# WebAuthn for hardware security keys
+webauthn:
+  disable: false
+  display_name: 'Sheily AI Enterprise'
+  attestation_conveyance_preference: 'indirect'
+  user_verification: 'preferred'
+  timeout: 60000
+
+# Duo Push for mobile 2FA
+duo_api:
+  disable: true
+
+# Access control configuration
+access_control:
+  default_policy: 'deny'
+  networks:
+    - name: 'internal'
+      networks:
+        - '10.0.0.0/8'
+        - '172.16.0.0/12'
+        - '192.168.0.0/16'
+  rules:
+    - domain: 'auth.sheily.yourdomain.com'
+      policy: 'bypass'
+
+    - domain: 'sheily.yourdomain.com'
+      policy: 'two_factor'
+
+    - domain: 'n8n.sheily.yourdomain.com'
+      policy: 'two_factor'
+
+    - domain: 'grafana.sheily.yourdomain.com'
+      policy: 'two_factor'
+
+    - domain: 'status.sheily.yourdomain.com'
+      policy: 'two_factor'
+
+    - domain: 'rag.sheily.yourdomain.com'
+      policy: 'two_factor'
+
+# Session configuration
+session:
+  name: 'authelia_session'
+  domain: 'sheily.yourdomain.com'
+  secret: ${AUTHELIA_SESSION_SECRET}
+  expiration: '3600'  # 1 hour
+  inactivity: '300'   # 5 minutes
+  remember_me_duration: '1M'
+
+# Storage configuration (PostgreSQL)
+storage:
+  encryption_key: ${AUTHELIA_JWT_SECRET}
+  local: null
+  postgres:
+    address: 'tcp://authelia-postgres'
+    port: 5432
+    database: 'authelia'
+    username: 'authelia_user'
+    password: ${AUTHELIA_DB_PASSWORD}
+    timeout: '5s'
+
+# Identity providers
+identity_providers:
+  oidc:
+    cors:
+      endpoints:
+        - authorization
+        - token
+        - userinfo
+        - introspection
+        - revocation
+      allowed_origins_from_client_redirect_uris: false
+    clients:
+      - id: 'sheily-frontend'
+        description: 'Sheily AI Frontend Application'
+        secret: ${JWT_SECRET_KEY}
+        redirect_uris:
+          - 'https://sheily.yourdomain.com/'
+          - 'http://localhost:3000/'
+        scopes:
+          - 'openid'
+          - 'email'
+          - 'profile'
+  oidc:
+    enable_authorization_endpoint: true
+
+# Password policy
+password_policy:
+  standard:
+    enabled: true
+    min_length: 12
+    max_length: 128
+    require_uppercase: true
+    require_lowercase: true
+    require_number: true
+    require_special: true
+
+# Identity validation
+identity_validation:
+  email:
+    mailer:
+      smtp:
+        username: ${NOTIFICATION_EMAIL_SMTP_USER}
+        password: ${NOTIFICATION_EMAIL_SMTP_PASSWORD}
+        host: ${NOTIFICATION_EMAIL_SMTP_HOST}
+        port: ${NOTIFICATION_EMAIL_SMTP_PORT}
+        tls:
+          server_name: ${NOTIFICATION_EMAIL_SMTP_HOST}
+          skip_verify: false
+        subject: '[Sheily AI] {title}'
+        startup_check_address: 'test@example.com'
+
+notifier:
+  filesystem:
+    filename: '/config/notification.txt'
+
+# Regulation compliance
+regulation:
+  gdpr:
+    enabled: true
+    policy_url: 'https://sheily.yourdomain.com/privacy'
+  ccpa:
+    enabled: false

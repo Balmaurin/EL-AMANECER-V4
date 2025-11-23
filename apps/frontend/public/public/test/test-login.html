@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login - Sheily AI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔐 Test de Login - Sheily AI</h1>
+        <p>Test de autenticación con el backend en <code>localhost:8000</code></p>
+
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" value="Sergiobalma.gomez@gmail.com">
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" value="Xboxone1981">
+        </div>
+
+        <button onclick="testLogin()">🚀 Test Login</button>
+        <button onclick="testHealth()" style="background: #2196F3; margin-top: 10px;">🏥 Test Health</button>
+        <button onclick="testCORS()" style="background: #FF9800; margin-top: 10px;">🌐 Test CORS</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'http://localhost:8001';
+        const resultDiv = document.getElementById('result');
+
+        function showResult(message, type = 'info') {
+            resultDiv.className = `result ${type}`;
+            resultDiv.textContent = message;
+        }
+
+        async function testHealth() {
+            showResult('🔄 Probando /health...', 'info');
+            try {
+                const response = await fetch(`${BACKEND_URL}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                showResult(`✅ Health OK\nStatus: ${response.status}\nResponse:\n${JSON.stringify(data, null, 2)}`, 'success');
+            } catch (error) {
+                showResult(`❌ Error en Health:\n${error.message}\n\nDetalles: ${error.stack}`, 'error');
+            }
+        }
+
+        async function testCORS() {
+            showResult('🔄 Probando CORS preflight...', 'info');
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type'
+                    }
+                });
+
+                showResult(`✅ CORS Preflight OK\nStatus: ${response.status}\nHeaders:\n${Array.from(response.headers.entries()).map(([k, v]) => `${k}: ${v}`).join('\n')}`, 'success');
+            } catch (error) {
+                showResult(`❌ Error en CORS:\n${error.message}\n\nDetalles: ${error.stack}`, 'error');
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            showResult('🔄 Enviando petición de login...', 'info');
+
+            try {
+                console.log('🔍 Intentando login:', { email, url: `${BACKEND_URL}/api/auth/login` });
+
+                const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        username: email,
+                        password: password
+                    })
+                });
+
+                console.log('📥 Respuesta recibida:', response.status, response.statusText);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const data = await response.json();
+                console.log('✅ Login exitoso:', data);
+
+                showResult(
+                    `✅ LOGIN EXITOSO!\n\n` +
+                    `Status: ${response.status}\n` +
+                    `Token: ${data.access_token.substring(0, 30)}...\n` +
+                    `User: ${data.user.name} (${data.user.email})\n` +
+                    `Role: ${data.user.role}\n\n` +
+                    `Response completa:\n${JSON.stringify(data, null, 2)}`,
+                    'success'
+                );
+
+            } catch (error) {
+                console.error('❌ Error en login:', error);
+                showResult(
+                    `❌ ERROR EN LOGIN\n\n` +
+                    `Mensaje: ${error.message}\n\n` +
+                    `Stack: ${error.stack}\n\n` +
+                    `Verifica:\n` +
+                    `1. Backend en http://localhost:8000\n` +
+                    `2. CORS configurado correctamente\n` +
+                    `3. Credenciales correctas`,
+                    'error'
+                );
+            }
+        }
+
+        // Test automático al cargar
+        window.addEventListener('load', () => {
+            console.log('🚀 Test de login cargado');
+            console.log('Backend URL:', BACKEND_URL);
+            console.log('Origin:', window.location.origin);
+        });
+    </script>
+</body>
+
+</html>

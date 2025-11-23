@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sheily Marketplace - Comercio SHEILYS</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #ff7c8e 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .tab {
+            padding: 15px 30px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+        }
+
+        .tab.active {
+            border-bottom-color: #667eea;
+            background: white;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #6c757d;
+        }
+
+        .collection-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .collection-item {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            background: white;
+            transition: box-shadow 0.3s;
+        }
+
+        .collection-item:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .collection-item h3 {
+            margin: 0 0 10px 0;
+            color: #667eea;
+        }
+
+        .collection-item p {
+            color: #6c757d;
+            margin: 0 0 15px 0;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .orders-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .orders-table th,
+        .orders-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .orders-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .analytics-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .analytics-card h3 {
+            margin: 0 0 10px 0;
+            color: #667eea;
+            font-size: 2em;
+        }
+
+        .analytics-card p {
+            margin: 0;
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .error {
+            text-align: center;
+            padding: 50px;
+            color: #dc3545;
+        }
+
+        .error h2 {
+            margin: 0 0 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛒 Sheily Marketplace</h1>
+            <p>Plataforma de comercio electrónico con tokens SHEILYS</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('collections')">📦 Colecciones</div>
+            <div class="tab" onclick="switchTab('orders')">📋 Mis Pedidos</div>
+            <div class="tab" onclick="switchTab('analytics')">📊 Analytics</div>
+        </div>
+
+        <div class="content">
+            <div id="collections" class="tab-content">
+                <h2>Colecciones Disponibles</h2>
+                <div id="collections-content" class="loading">Cargando colecciones...</div>
+            </div>
+
+            <div id="orders" class="tab-content" style="display: none;">
+                <h2>Mis Pedidos</h2>
+                <div id="orders-content" class="loading">Cargando pedidos...</div>
+            </div>
+
+            <div id="analytics" class="tab-content" style="display: none;">
+                <h2>Analytics del Marketplace</h2>
+                <div id="analytics-content" class="loading">Cargando estadísticas...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8001';
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.style.display = 'none';
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).style.display = 'block';
+            event.target.classList.add('active');
+
+            // Load tab content
+            if (tabName === 'collections') {
+                loadCollections();
+            } else if (tabName === 'orders') {
+                loadOrders();
+            } else if (tabName === 'analytics') {
+                loadAnalytics();
+            }
+        }
+
+        async function loadCollections() {
+            const content = document.getElementById('collections-content');
+            try {
+                const response = await fetch(`${API_BASE}/api/marketplace/collections`);
+                if (!response.ok) throw new Error('Failed to load collections');
+
+                const data = await response.json();
+                if (data.success) {
+                    displayCollections(data.collections);
+                } else {
+                    throw new Error('No collections data');
+                }
+            } catch (error) {
+                content.innerHTML = `<div class="error"><h2>Error al cargar</h2><p>${error.message}</p></div>`;
+            }
+        }
+
+        function displayCollections(collections) {
+            const content = document.getElementById('collections-content');
+
+            if (!collections || Object.keys(collections).length === 0) {
+                content.innerHTML = '<p>No hay colecciones disponibles actualmente.</p>';
+                return;
+            }
+
+            let html = '<div class="collection-grid">';
+
+            // If collections is an object with category keys
+            if (typeof collections === 'object' && !Array.isArray(collections)) {
+                Object.entries(collections).forEach(([category, items]) => {
+                    if (Array.isArray(items)) {
+                        items.forEach(item => {
+                            html += `
+                                <div class="collection-item">
+                                    <h3>${item.name || 'Producto'}</h3>
+                                    <p>${item.description || 'Sin descripción'}</p>
+                                    <p><strong>Precio:</strong> ${item.price_sheily || 'N/A'} SHEILYS</p>
+                                    <button class="btn" onclick="placeOrder('${item.id || 'item'}')">
+                                        Comprar Ahora
+                                    </button>
+                                </div>
+                            `;
+                        });
+                    }
+                });
+            } else if (Array.isArray(collections)) {
+                // If it's a flat array
+                collections.forEach(item => {
+                    html += `
+                        <div class="collection-item">
+                            <h3>${item.name || 'Producto'}</h3>
+                            <p>${item.description || 'Sin descripción'}</p>
+                            <p><strong>Precio:</strong> ${item.price_sheily || 'N/A'} SHEILYS</p>
+                            <button class="btn" onclick="placeOrder('${item.id || 'item'}')">
+                                Comprar Ahora
+                            </button>
+                        </div>
+                    `;
+                });
+            }
+
+            html += '</div>';
+            content.innerHTML = html;
+        }
+
+        async function placeOrder(itemId) {
+            const buyerId = prompt('Ingresa tu ID de usuario para la compra:');
+            if (!buyerId) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/marketplace/order`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        buyer_id: buyerId,
+                        item_ids: [itemId]
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('🎉 Pedido realizado exitosamente!\n' + JSON.stringify(result.order, null, 2));
+                    loadOrders(); // Refresh orders
+                } else {
+                    alert('❌ Error: ' + (result.error || 'No se pudo procesar el pedido'));
+                }
+            } catch (error) {
+                alert('❌ Error de conexión: ' + error.message);
+            }
+        }
+
+        async function loadOrders() {
+            const content = document.getElementById('orders-content');
+            try {
+                const userId = 'default_user'; // You can make this dynamic
+                const response = await fetch(`${API_BASE}/api/marketplace/orders/${userId}`);
+
+                if (!response.ok) throw new Error('Failed to load orders');
+
+                const data = await response.json();
+                if (data.success) {
+                    displayOrders(data.orders);
+                } else {
+                    throw new Error('No orders data');
+                }
+            } catch (error) {
+                content.innerHTML = `<div class="error"><h2>Error al cargar</h2><p>${error.message}</p></div>`;
+            }
+        }
+
+        function displayOrders(orders) {
+            const content = document.getElementById('orders-content');
+
+            if (!orders || orders.length === 0) {
+                content.innerHTML = '<p>No tienes pedidos realizados aún.</p>';
+                return;
+            }
+
+            let html = `
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>ID Pedido</th>
+                            <th>Items</th>
+                            <th>Estado</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            orders.forEach(order => {
+                html += `
+                    <tr>
+                        <td>${order.id || 'N/A'}</td>
+                        <td>${order.items ? order.items.join(', ') : 'N/A'}</td>
+                        <td>${order.status || 'Pendiente'}</td>
+                        <td>${order.timestamp || 'N/A'}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            content.innerHTML = html;
+        }
+
+        async function loadAnalytics() {
+            const content = document.getElementById('analytics-content');
+            try {
+                const response = await fetch(`${API_BASE}/api/marketplace/analytics`);
+
+                if (!response.ok) throw new Error('Failed to load analytics');
+
+                const data = await response.json();
+                if (data.success) {
+                    displayAnalytics(data.analytics);
+                } else {
+                    throw new Error('No analytics data');
+                }
+            } catch (error) {
+                content.innerHTML = `<div class="error"><h2>Error al cargar</h2><p>${error.message}</p></div>`;
+            }
+        }
+
+        function displayAnalytics(analytics) {
+            const content = document.getElementById('analytics-content');
+
+            const metrics = [
+                { label: 'Total Items', value: analytics.total_items || 0 },
+                { label: 'Total Revenue', value: `${analytics.total_revenue || 0} SHEILYS` },
+                { label: 'Pedidos Activos', value: analytics.active_orders || 0 },
+                { label: 'Usuarios', value: analytics.total_users || 0 }
+            ];
+
+            let html = '<div class="analytics-grid">';
+            metrics.forEach(metric => {
+                html += `
+                    <div class="analytics-card">
+                        <h3>${metric.value}</h3>
+                        <p>${metric.label}</p>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            content.innerHTML = html;
+        }
+
+        // Initialize by loading collections
+        document.addEventListener('DOMContentLoaded', function () {
+            loadCollections();
+        });
+    </script>
+</body>
+
+</html>

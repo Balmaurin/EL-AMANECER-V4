@@ -1,0 +1,49 @@
+# Configuración del sistema de chunking
+
+# Configuración general
+embedder: "sentence-transformers/all-MiniLM-L6-v2"
+min_chunk_length: 100
+max_chunk_length: 1000
+target_overlap: 0.2
+
+# Configuración de caché
+cache_dir: "cache/chunks"
+cache_size: 10000  # Número de chunks en caché en memoria
+max_cache_size: 1000000000  # 1GB máximo en disco
+vacuum_threshold: 0.8  # Limpiar caché cuando alcance 80%
+
+# Métricas de calidad
+quality_thresholds:
+  coherence_score: 0.7
+  boundary_score: 0.6
+  info_density: 0.3
+  readability: 0.7
+  overlap_ratio_tolerance: 0.1
+
+# Optimización de chunks
+optimization:
+  max_attempts: 3
+  context_window: 100  # Caracteres de contexto para optimización
+  min_sentences: 2
+  max_sentences: 10
+  semantic_weight: 0.4
+  boundary_weight: 0.3
+  density_weight: 0.2
+  readability_weight: 0.1
+
+# Detección de límites naturales
+boundary_detection:
+  respect_paragraphs: true
+  respect_sentences: true
+  respect_sections: true
+  respect_lists: true
+  min_section_length: 50
+  max_section_length: 2000
+
+# Análisis semántico
+semantic_analysis:
+  model: "sentence-transformers/all-MiniLM-L6-v2"
+  batch_size: 32
+  use_gpu: true
+  similarity_threshold: 0.7
+  embedding_dimension: 384

@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><script>// perf_gate.js — desactiva efectos 3D en dispositivos modestos y pausa en background
+(function () {
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const lowEnd =
+    (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
+    (navigator.deviceMemory && navigator.deviceMemory <= 4);
+
+  if (prefersReducedMotion || lowEnd) {
+    document.documentElement.dataset.lowend = "1";
+    document.getElementById('logo3d')?.remove();
+    document.getElementById('bgCanvas')?.remove();
+  }
+
+  // Señal para pausar animaciones en pestaña oculta
+  window.__SHEILI_PAUSE_ANIM = false;
+  document.addEventListener('visibilitychange', () => {
+    window.__SHEILI_PAUSE_ANIM = document.visibilityState !== 'visible';
+  });
+})();
+</script>
+<meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SHEILI — IA local, privacidad verificable</title>
+  <meta name="description" content="SHEILI transforma dispositivos ordinarios en motores de IA local — privacidad verificable y latencia cero.">
+  <link rel="canonical" href="https://sheili.ai/">
+  <meta name="theme-color" content="#030308">
+
+  <!-- Icons / PWA -->
+  <link rel="icon" href="/icons/icon-48.png" sizes="48x48">
+  <link rel="icon" href="/icons/icon-192.png" sizes="192x192">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="SHEILI">
+  <meta property="og:title" content="SHEILI — IA local, privacidad verificable">
+  <meta property="og:description" content="SHEILI transforma dispositivos ordinarios en motores de IA local.">
+  <meta property="og:image" content="https://sheili.ai/og.png">
+  <meta property="og:url" content="https://sheili.ai/">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SHEILI — IA local, privacidad verificable">
+  <meta name="twitter:description" content="Primera capa de inteligencia local, sin nube.">
+  <meta name="twitter:image" content="https://sheili.ai/og.png">
+
+  <!-- Fonts: preconnect + stylesheet (reemplaza @import in-CSS) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHEILI — The Local Intelligence Revolution</title>
+<style>
+:root {
+  --bg: #030308;
+  --fg: #e8f0fc;
+  --muted: #8590a8;
+  --accent: #00f0ff;
+  --accentGlow: rgba(0,240,255,0.3);
+  --card: #0a0b14;
+  --cardBorder: #14161f;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --pad: clamp(20px, 3vw, 40px);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+#bgCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  opacity: 0.85;
+}
+
+#logo3d {
+  position: fixed;
+  top: 15vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 400px;
+  height: 400px;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 1.2s var(--ease);
+}
+
+#logo3d.visible {
+  opacity: 0.2;
+}
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: saturate(180%) blur(20px);
+  background: rgba(3, 3, 8, 0.7);
+  border-bottom: 1px solid var(--cardBorder);
+}
+
+header .wrap {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 16px var(--pad);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.logo-glow {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1cf, #7cf7d4);
+  box-shadow: 0 0 20px var(--accentGlow);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.85; }
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: rgba(10, 11, 20, 0.8);
+  border: 1px solid var(--cardBorder);
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+nav {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s var(--ease);
+  text-decoration: none;
+  display: inline-block;
+  font-family: inherit;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #1cf, #7cf7d4);
+  color: #000;
+  box-shadow: 0 4px 20px var(--accentGlow);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px var(--accentGlow);
+}
+
+.btn-secondary {
+  background: rgba(20, 22, 31, 0.8);
+  color: var(--fg);
+  border: 1px solid var(--cardBorder);
+}
+
+.btn-secondary:hover {
+  background: rgba(30, 32, 41, 0.9);
+  border-color: var(--accent);
+}
+
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 10;
+  max-width: 1100px;
+  padding: 0 var(--pad);
+}
+
+h1 {
+  font-size: clamp(40px, 8vw, 96px);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #fff 20%, var(--accent) 80%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 24px;
+  opacity: 0;
+  animation: fadeInUp 1.4s var(--ease) 0.3s forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-subtitle {
+  font-size: clamp(18px, 2.2vw, 26px);
+  color: var(--muted);
+  max-width: 800px;
+  margin: 0 auto 32px;
+  opacity: 0;
+  animation: fadeInUp 1.4s var(--ease) 0.6s forwards;
+}
+
+.hero-cards {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 48px;
+  opacity: 0;
+  animation: fadeInUp 1.4s var(--ease) 0.9s forwards;
+}
+
+.hero-card {
+  background: linear-gradient(140deg, rgba(10, 11, 20, 0.95), rgba(8, 9, 15, 0.9));
+  border: 1px solid var(--cardBorder);
+  border-radius: 16px;
+  padding: 24px 28px;
+  min-width: 220px;
+  transition: all 0.4s var(--ease);
+  cursor: default;
+}
+
+.hero-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  border-color: var(--accent);
+  box-shadow: 0 16px 50px rgba(0, 240, 255, 0.2);
+}
+
+.hero-card h3 {
+  font-size: 16px;
+  color: var(--accent);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.hero-card p {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.scroll-indicator {
+  position: absolute;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  animation: fadeIn 1s var(--ease) 1.5s forwards, bounce 2.5s ease-in-out 2s infinite;
+}
+
+@keyframes fadeIn {
+  to { opacity: 0.7; }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-12px); }
+}
+
+.scroll-indicator svg {
+  width: 24px;
+  height: 24px;
+  stroke: var(--accent);
+  fill: none;
+  stroke-width: 2;
+}
+
+section {
+  position: relative;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: clamp(80px, 12vh, 160px) var(--pad);
+}
+
+h2 {
+  font-size: clamp(32px, 5vw, 64px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: clamp(24px, 4vw, 48px);
+  text-align: center;
+}
+
+.intro {
+  font-size: clamp(17px, 2vw, 22px);
+  color: var(--muted);
+  text-align: center;
+  max-width: 900px;
+  margin: 0 auto 64px;
+  line-height: 1.75;
+}
+
+.grid {
+  display: grid;
+  gap: clamp(24px, 3vw, 40px);
+}
+
+.cols-2 {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 450px), 1fr));
+}
+
+.cols-3 {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+}
+
+.card {
+  background: linear-gradient(145deg, var(--card), rgba(6, 7, 12, 0.95));
+  border: 1px solid var(--cardBorder);
+  border-radius: 20px;
+  padding: clamp(28px, 4vw, 44px);
+  transition: all 0.5s var(--ease);
+  opacity: 0;
+  transform: translateY(40px);
+}
+
+.card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.card:hover {
+  transform: translateY(-10px);
+  border-color: var(--accent);
+  box-shadow: 0 20px 60px rgba(0, 240, 255, 0.15);
+}
+
+.card h3 {
+  font-size: clamp(22px, 2.6vw, 30px);
+  margin-bottom: 16px;
+  font-weight: 700;
+}
+
+.card p {
+  color: var(--muted);
+  line-height: 1.8;
+  margin-bottom: 12px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(15, 16, 24, 0.9);
+  border: 1px solid var(--cardBorder);
+  border-radius: 30px;
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 12px;
+}
+
+.step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #1cf, #7cf7d4);
+  border-radius: 50%;
+  color: #000;
+  font-weight: 900;
+  font-size: 20px;
+  margin-bottom: 16px;
+}
+
+.highlight {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(112, 0, 255, 0.1));
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  border-radius: 16px;
+  padding: clamp(32px, 5vw, 60px);
+  margin: clamp(60px, 8vh, 100px) 0;
+}
+
+.stat {
+  text-align: center;
+  padding: 24px;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: all 0.8s var(--ease);
+}
+
+.stat.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.stat-value {
+  font-size: clamp(48px, 8vw, 96px);
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--accent), #ffffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  margin-bottom: 15px;
+}
+
+.stat-label {
+  font-size: 18px;
+  color: var(--muted);
+}
+
+.cta-section {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.08), rgba(112, 0, 255, 0.08));
+  border: 2px solid rgba(0, 240, 255, 0.2);
+  border-radius: 24px;
+  padding: clamp(48px, 8vw, 80px);
+  text-align: center;
+  margin: clamp(80px, 12vh, 120px) 0;
+}
+
+.cta-section h2 {
+  color: var(--accent);
+}
+
+.cta-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 40px;
+}
+
+footer {
+  border-top: 1px solid var(--cardBorder);
+  padding: 60px var(--pad);
+  text-align: center;
+  color: var(--muted);
+}
+
+.pillars {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 48px;
+}
+
+.pillar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 28px;
+  background: linear-gradient(145deg, var(--card), rgba(6, 7, 12, 0.95));
+  border: 1px solid var(--cardBorder);
+  border-radius: 16px;
+  min-width: 200px;
+  transition: all 0.4s var(--ease);
+}
+
+.pillar:hover {
+  transform: scale(1.08) translateY(-4px);
+  border-color: var(--accent);
+  box-shadow: 0 12px 40px rgba(0, 240, 255, 0.2);
+}
+
+.pillar svg {
+  width: 40px;
+  height: 40px;
+  stroke: var(--accent);
+  fill: none;
+  stroke-width: 2;
+}
+
+.pillar span {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+@media (max-width: 768px) {
+  #logo3d {
+    width: 300px;
+    height: 300px;
+    top: 10vh;
+  }
+
+  .hero-cards {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  nav a:not(.btn) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  #bgCanvas, #logo3d {
+    display: none !important;
+  }
+}
+</style></head>
+<body>
+<a class="skip" href="#contenido" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">Saltar al contenido</a>
+<main id="contenido">
+
+<canvas id="bgCanvas"></canvas>
+<div id="logo3d"></div>
+
+<header>
+  <div class="wrap">
+    <div class="logo">
+      <div class="logo-glow"></div>
+      <span>SHEILI</span>
+      <span class="tag">
+        <span style="color:var(--accent)">●</span>
+        IA local · Cero nube
+      </span>
+    </div>
+    <nav>
+      <a class="btn btn-secondary" href="#modelo">Modelo de Negocio</a>
+      <a class="btn btn-primary" href="http://localhost:3000/dashboard">Claim Airdrop</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-content">
+    <h1>The Local Intelligence Revolution</h1>
+    <p class="hero-subtitle">SHEILI transforma dispositivos ordinarios en motores de IA local — creando la primera capa de inteligencia alimentada por el hardware del usuario.</p>
+
+    <div class="hero-cards">
+      <div class="hero-card">
+        <h3>Inferencia 100% local</h3>
+        <p>Ejecutada en tu dispositivo</p>
+      </div>
+      <div class="hero-card">
+        <h3>Cero datos en la nube</h3>
+        <p>Privacidad verificable</p>
+      </div>
+      <div class="hero-card">
+        <h3>Respaldado por hardware</h3>
+        <p>Inmutabilidad garantizada</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-indicator">
+    <span style="font-size:14px;color:var(--muted)">Scroll para explorar</span>
+    <svg viewBox="0 0 24 24"><path d="M12 5v14m0 0l-7-7m7 7l7-7"/></svg>
+  </div>
+</section>
+
+<section id="vision">
+  <h2 class="reveal-element">La privacidad es el fundamento de la autonomía humana</h2>
+  <p class="intro reveal-element">Estamos construyendo una capa de inteligencia universal que asegura las transiciones de estado a través de una red descentralizada, ejecutada localmente. Al permitir que millones de dispositivos procesen IA sin intermediarios, democratizamos el acceso a inteligencia verificable.</p>
+</section>
+
+<section id="modelo">
+  <h2 class="reveal-element">El Modelo de Negocio</h2>
+  <p class="intro reveal-element">Un ecosistema equilibrado donde el trabajo de los usuarios y el capital invertido convergen para crear valor verificable, distribuido y transparente.</p>
+
+  <div class="grid cols-2">
+    <div class="card reveal-element">
+      <h3>Aprendizaje Federado</h3>
+      <p>Los datos permanecen en dispositivos locales. Cada uno entrena una copia del modelo de manera local y solo envía gradientes aprendidos, no los datos en sí, para actualizar el modelo global.</p>
+      <span class="pill">🔒 Privacidad por diseño</span>
+    </div>
+
+    <div class="card reveal-element">
+      <h3>Redes P2P Encriptadas</h3>
+      <p>Los nodos se conectan directamente entre sí con cifrado extremo a extremo. Ningún nodo puede leer los datos de otros, solo se combinan contribuciones cifradas mediante criptografía avanzada.</p>
+      <span class="pill">🛡️ Cero trust · Máxima seguridad</span>
+    </div>
+  </div>
+
+  <div class="highlight">
+    <h3 style="text-align:center;margin-bottom:32px;font-size:clamp(24px,3vw,36px)">Frameworks Open Source</h3>
+    <div class="grid cols-3">
+      <div class="card reveal-element">
+        <h3>Flower</h3>
+        <p>Framework unificado para aprendizaje federado que facilita arranques rápidos en startups.</p>
+      </div>
+      <div class="card reveal-element">
+        <h3>TensorFlow Federated</h3>
+        <p>Entrenamiento distribuido de modelos TensorFlow con APIs de alto nivel.</p>
+      </div>
+      <div class="card reveal-element">
+        <h3>NVIDIA FLARE</h3>
+        <p>Plataforma empresarial para desplegar aprendizaje federado en producción.</p>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="reveal-element" style="margin-top:clamp(80px,12vh,140px)">Gradientes: El Activo Digital</h2>
+  <p class="intro reveal-element">Los gradientes representan cómo ajustar el modelo para mejorar. Al combinarse masivamente se convierten en un tesoro de entrenamiento, generando modelos globales sin comprometer privacidad.</p>
+
+  <div class="grid cols-2">
+    <div class="card reveal-element">
+      <div class="step-number">1</div>
+      <h3>Entrenamiento Local</h3>
+      <p>Cada usuario entrena su modelo local generando gradientes que son actualizaciones de los pesos del modelo en función de datos locales.</p>
+    </div>
+
+    <div class="card reveal-element">
+      <div class="step-number">2</div>
+      <h3>Compartir Gradientes</h3>
+      <p>Solo se envía el gradiente al servidor central, no los datos originales. Se mantiene privacidad absoluta.</p>
+    </div>
+
+    <div class="card reveal-element">
+      <div class="step-number">3</div>
+      <h3>Agregación Global</h3>
+      <p>El servidor recibe gradientes de todos los usuarios, los combina (promedio u otra técnica) y actualiza el modelo global.</p>
+    </div>
+
+    <div class="card reveal-element">
+      <div class="step-number">4</div>
+      <h3>Distribución y Repetición</h3>
+      <p>El modelo global mejorado se distribuye de nuevo. El ciclo se repite, mejorando sin que los datos salgan del dispositivo.</p>
+    </div>
+  </div>
+</section>
+
+<section id="mercado">
+  <h2 class="reveal-element">Realidad de Mercado en 2025</h2>
+  <p class="intro reveal-element">El mercado de datos de interacción humana y modelos de IA está en explosión exponencial, con valoraciones millonarias y tasas de crecimiento superiores al 30% anual.</p>
+
+  <div class="grid cols-3">
+    <div class="stat reveal-element">
+      <div class="stat-value" data-target="39.3">$39.3B</div>
+      <div class="stat-label">Mercado de voz IA en 2032<br>CAGR 32.47%</div>
+    </div>
+
+    <div class="stat reveal-element">
+      <div class="stat-value" data-target="59.4">$59.4B</div>
+      <div class="stat-label">Mercado LLM en 2034<br>CAGR 34.8%</div>
+    </div>
+
+    <div class="stat reveal-element">
+      <div class="stat-value" data-target="81.6">$81.6B</div>
+      <div class="stat-label">Reconocimiento de voz 2032<br>CAGR 23.1%</div>
+    </div>
+  </div>
+</section>
+
+<section id="tokenomics">
+  <h2 class="reveal-element">Tokenomics y Distribución</h2>
+  <p class="intro reveal-element">Un sistema de incentivos transparente donde trabajo y capital se benefician del éxito futuro mediante tokens verificables en blockchain.</p>
+
+  <div class="grid cols-2">
+    <div class="card reveal-element">
+      <h3>Certificación en Solana</h3>
+      <p>Las interacciones se certifican en blockchain, creando un registro inmutable de contribuciones. 500-1.000 usuarios generan miles de gradientes diarios con valor comercial verificable.</p>
+      <span class="pill">⛓️ Transparencia · Inmutabilidad</span>
+    </div>
+
+    <div class="card reveal-element">
+      <h3>Distribución Proporcional</h3>
+      <p>Un contrato inteligente distribuye tokens airdrop proporcionalmente al volumen de interacciones. Retribución transparente vinculada a aportaciones reales.</p>
+      <span class="pill">⚖️ Proporcional · Justo · Verificable</span>
+    </div>
+
+    <div class="card reveal-element">
+      <h3>Tokens para Trabajo</h3>
+      <p>Los usuarios que generan interacciones útiles reciben tokens. Más contribuciones de calidad = más tokens. El valor crece con el éxito del modelo.</p>
+      <span class="pill">💎 Incentivo directo</span>
+    </div>
+
+    <div class="card reveal-element">
+      <h3>Tokens para Capital</h3>
+      <p>Los inversores que aportan capital operativo reciben equity o tokens. Ecosistema equilibrado donde trabajo y capital convergen.</p>
+      <span class="pill">🚀 Crecimiento sostenible</span>
+    </div>
+  </div>
+</section>
+
+<section id="airdrop">
+  <div class="cta-section">
+    <h2 style="opacity:1;transform:none">Únete a la Revolución</h2>
+    <p class="intro" style="opacity:1;transform:none;margin-bottom:0">Forma parte de la red de verificación distribuida. Obtén recompensas por contribuir con tu energía computacional. El futuro de la IA es local, privado y tuyo.</p>
+
+    <div class="cta-buttons">
+      <a href="http://localhost:3000/dashboard" class="btn btn-primary" style="font-size:18px;padding:14px 36px">Claim Airdrop Ahora</a>
+      <a href="#modelo" class="btn btn-secondary" style="font-size:18px;padding:14px 36px">Ver Modelo Completo</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="pillars">
+    <div class="pillar">
+      <svg viewBox="0 0 24 24"><path d="M12 2v20M2 12c0 5.5 4.5 10 10 10m0-20c5.5 0 10 4.5 10 10s-4.5 10-10 10"/></svg>
+      <span>Privados y Locales</span>
+    </div>
+    <div class="pillar">
+      <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      <span>Latencia Cero</span>
+    </div>
+    <div class="pillar">
+      <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <span>Para Datos Sensibles</span>
+    </div>
+    <div class="pillar">
+      <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4L12 14.01l-3-3"/></svg>
+      <span>100% Funcionales</span>
+    </div>
+  </div>
+
+  <p style="font-size:14px;max-width:600px;margin:0 auto">© 2025 SHEILI. IA local, privacidad verificable y modelo de negocio distribuido. Cambia el paradigma.</p>
+</footer>
+
+<script type="module">
+// ========== FIX CRÍTICO #1: THREE.JS CON ERROR HANDLING ROBUSTO ==========
+let THREE;
+try {
+  THREE = await import('https://unpkg.com/three@0.160.1/build/three.module.js');
+  console.log('✅ Three.js v' + THREE.REVISION + ' cargado correctamente');
+} catch (error) {
+  console.error('❌ Error cargando Three.js:', error);
+  document.getElementById('logo3d')?.remove();
+}
+
+// Solo ejecutar si THREE está disponible
+if (THREE) {
+  const container3d = document.getElementById('logo3d');
+  const renderer3d = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer3d.setSize(400, 400);
+  renderer3d.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  container3d.appendChild(renderer3d.domElement);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  camera.position.z = 7;
+
+  const light1 = new THREE.DirectionalLight('#ffffff', 1.8);
+  light1.position.set(5, 5, 5);
+  scene.add(light1);
+
+  const light2 = new THREE.DirectionalLight('#00f0ff', 1.2);
+  light2.position.set(-4, -3, -4);
+  scene.add(light2);
+
+  scene.add(new THREE.AmbientLight('#1a2a3a', 0.4));
+
+  const geo = new THREE.TorusKnotGeometry(1.4, 0.45, 500, 32, 3, 4);
+  const mat = new THREE.MeshPhysicalMaterial({
+    metalness: 1.0,
+    roughness: 0.08,
+    color: new THREE.Color('#a0c4ff'),
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.1,
+    reflectivity: 1.0,
+    sheen: 0.5,
+    sheenColor: new THREE.Color('#00f0ff')
+  });
+
+  const mesh = new THREE.Mesh(geo, mat);
+  scene.add(mesh);
+
+  const cubeRT = new THREE.WebGLCubeRenderTarget(256, {
+    type: THREE.HalfFloatType,
+    generateMipmaps: true,
+    minFilter: THREE.LinearMipmapLinearFilter
+  });
+  const cubeCam = new THREE.CubeCamera(0.1, 100, cubeRT);
+  mesh.add(cubeCam);
+  mat.envMap = cubeRT.texture;
+  mat.envMapIntensity = 1.5;
+
+  let scrollNorm = 0, mouseX = 0, mouseY = 0, t = 0;
+
+  window.addEventListener('scroll', () => {
+    scrollNorm = window.scrollY / (document.body.scrollHeight - window.innerHeight || 1);
+
+    if (scrollNorm > 0.15) {
+      container3d.classList.remove('visible');
+    } else {
+      container3d.classList.add('visible');
+    }
+  }, { passive: true });
+
+  window.addEventListener('mousemove', (e) => {
+    mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+    mouseY = -((e.clientY / window.innerHeight) * 2 - 1);
+  }, { passive: true });
+
+  function animate() {
+    t += 0.016;
+
+    mesh.visible = false;
+    cubeCam.update(renderer3d, scene);
+    mesh.visible = true;
+
+    mesh.rotation.x = scrollNorm * Math.PI * 3 + Math.sin(t * 0.2) * 0.1;
+    mesh.rotation.y = scrollNorm * Math.PI * 2.5 + Math.cos(t * 0.25) * 0.1;
+    mesh.rotation.z = scrollNorm * Math.PI * 0.8 + Math.sin(t * 0.15) * 0.05;
+
+    mesh.position.x = mouseX * 0.3;
+    mesh.position.y = -mouseY * 0.3;
+
+    const scale = 1.0 + Math.sin(t * 0.5) * 0.05;
+    mesh.scale.set(scale, scale, scale);
+
+    renderer3d.render(scene, camera);
+    requestAnimationFrame(animate);
+  }
+
+  animate();
+
+  setTimeout(() => {
+    container3d.classList.add('visible');
+  }, 800);
+}
+</script>
+
+<script>
+// ========== FIX #2: CANVAS SHADER BACKGROUND CON ERROR HANDLING ==========
+const canvas = document.getElementById('bgCanvas');
+const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+
+if (gl) {
+  let W = window.innerWidth, H = window.innerHeight;
+  const DPR = Math.min(2, window.devicePixelRatio || 1);
+
+  function resize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+
+  window.addEventListener('resize', resize, { passive: true });
+  resize();
+
+  const vs = `
+    attribute vec2 p;
+    void main() { gl_Position = vec4(p, 0, 1); }
+  `;
+
+  const fs = `
+    precision highp float;
+    uniform vec2 u_res;
+    uniform float u_time;
+    uniform float u_scroll;
+    uniform vec2 u_mouse;
+
+    float noise(vec2 p) {
+      return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+    }
+
+    float fbm(vec2 p) {
+      float v = 0.0;
+      float a = 0.5;
+      for (int i = 0; i < 5; i++) {
+        v += noise(p) * a;
+        p *= 2.0;
+        a *= 0.5;
+      }
+      return v;
+    }
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_res;
+      vec2 p = (uv * 2.0 - 1.0) * vec2(u_res.x / u_res.y, 1.0);
+
+      float t = u_time * 0.3;
+      float scroll = u_scroll * 6.28;
+
+      vec2 travelP = p + vec2(scroll * 0.2, sin(scroll * 0.5) * 0.3);
+      travelP += u_mouse * 0.15;
+
+      float d = length(travelP);
+      float angle = atan(travelP.y, travelP.x);
+
+      float spiral = sin(d * 5.0 - t + angle * 3.0 + scroll * 0.4) * 0.5 + 0.5;
+      float n = fbm(travelP * 3.0 + t * 0.15);
+
+      vec3 col1 = vec3(0.01, 0.02, 0.05);
+      vec3 col2 = vec3(0.03, 0.05, 0.12);
+      vec3 accent = vec3(0.0, 0.94, 1.0);
+
+      vec3 base = mix(col1, col2, uv.y + scroll * 0.05);
+      base += accent * spiral * 0.12 * (1.0 - d * 0.4);
+      base += accent * n * 0.08;
+
+      float vignette = 1.0 - length(uv - 0.5) * 0.8;
+      base *= vignette;
+
+      float grain = noise(uv * 800.0 + t) * 0.03;
+      base += grain;
+
+      gl_FragColor = vec4(base, 1.0);
+    }
+  `;
+
+  function compile(type, src) {
+    const shader = gl.createShader(type);
+    gl.shaderSource(shader, src);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      console.error('Shader error:', gl.getShaderInfoLog(shader));
+      return null;
+    }
+    return shader;
+  }
+
+  const prog = gl.createProgram();
+  gl.attachShader(prog, compile(gl.VERTEX_SHADER, vs));
+  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+
+  const pLoc = gl.getAttribLocation(prog, 'p');
+  gl.enableVertexAttribArray(pLoc);
+  gl.vertexAttribPointer(pLoc, 2, gl.FLOAT, false, 0, 0);
+
+  const u_res = gl.getUniformLocation(prog, 'u_res');
+  const u_time = gl.getUniformLocation(prog, 'u_time');
+  const u_scroll = gl.getUniformLocation(prog, 'u_scroll');
+  const u_mouse = gl.getUniformLocation(prog, 'u_mouse');
+
+  let time = 0, scrollNorm = 0, mouseX = 0, mouseY = 0;
+
+  window.addEventListener('scroll', () => {
+    scrollNorm = window.scrollY / (document.body.scrollHeight - window.innerHeight || 1);
+  }, { passive: true });
+
+  window.addEventListener('mousemove', (e) => {
+    mouseX = (e.clientX / W) * 2 - 1;
+    mouseY = -((e.clientY / H) * 2 - 1);
+  }, { passive: true });
+
+  function draw() {
+    time += 0.016;
+
+    gl.uniform2f(u_res, canvas.width, canvas.height);
+    gl.uniform1f(u_time, time);
+    gl.uniform1f(u_scroll, scrollNorm);
+    gl.uniform2f(u_mouse, mouseX, mouseY);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+} else {
+  console.warn('WebGL no disponible');
+}
+
+// ========== FIX #3: SCROLL-REVEAL CON DELAYS ESCALONADOS ==========
+const revealElements = document.querySelectorAll('.reveal-element');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry, idx) => {
+    if (entry.isIntersecting) {
+      setTimeout(() => {
+        entry.target.classList.add('visible');
+      }, idx * 100);
+    }
+  });
+}, {
+  threshold: 0.15,
+  rootMargin: '0px 0px -10% 0px'
+});
+
+revealElements.forEach(el => observer.observe(el));
+
+// ========== FIX #4: ANIMATED COUNTERS PARA STATS ==========
+const stats = document.querySelectorAll('.stat');
+
+const statsObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+
+      const valueEl = entry.target.querySelector('.stat-value');
+      const target = parseFloat(valueEl.dataset.target);
+
+      if (target) {
+        let current = 0;
+        const increment = target / 60;
+        const timer = setInterval(() => {
+          current += increment;
+          if (current >= target) {
+            current = target;
+            clearInterval(timer);
+          }
+          valueEl.textContent = '$' + current.toFixed(1) + 'B';
+        }, 25);
+      }
+
+      statsObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.3 });
+
+stats.forEach(stat => statsObserver.observe(stat));
+
+// ========== FIX #6: NAVEGACIÓN AL BLOG ==========
+document.addEventListener('DOMContentLoaded', function() {
+  // Buscar el botón/tag "IA local · Cero nube" y hacerlo clickeable
+  const blogButton = document.querySelector('.tag');
+  if (blogButton) {
+    blogButton.style.cursor = 'pointer';
+    blogButton.title = 'Haz clic para leer la historia completa de Sheily';
+
+    blogButton.addEventListener('click', function() {
+      window.location.href = 'Sheilyblog.html';
+    });
+
+    // Efecto hover mejorado
+    blogButton.addEventListener('mouseenter', function() {
+      this.style.transform = 'scale(1.05)';
+      this.style.transition = 'transform 0.3s ease';
+    });
+
+    blogButton.addEventListener('mouseleave', function() {
+      this.style.transform = 'scale(1)';
+    });
+  }
+
+  // También hacer clickeable el texto completo del header
+  const logoElement = document.querySelector('.logo');
+  if (logoElement) {
+    logoElement.style.cursor = 'pointer';
+
+    logoElement.addEventListener('click', function() {
+      window.location.href = 'Sheilyblog.html';
+    });
+  }
+});
+
+// ========== FIX #5: SMOOTH SCROLL CON EASING ==========
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function(e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+
+    if (target) {
+      const start = window.scrollY;
+      const end = target.offsetTop - 100;
+      const distance = end - start;
+      const duration = 1200;
+      let startTime = null;
+
+      function easeInOutCubic(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      }
+
+      function animation(currentTime) {
+        if (!startTime) startTime = currentTime;
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = easeInOutCubic(progress);
+
+        window.scrollTo(0, start + distance * eased);
+
+        if (progress < 1) {
+          requestAnimationFrame(animation);
+        }
+      }
+
+      requestAnimationFrame(animation);
+    }
+  });
+});
+
+console.log('✅ Todas las reparaciones aplicadas correctamente');
+</script>
+
+</main>
+</body>
+</html>
