@@ -29,10 +29,10 @@ class AuthService:
     """Servicio de autenticación y gestión de usuarios"""
 
     def __init__(self):
-        self.secret_key = settings.security.secret_key
-        self.algorithm = settings.security.algorithm
-        self.access_token_expire_minutes = settings.security.access_token_expire_minutes
-        self.refresh_token_expire_days = settings.security.refresh_token_expire_days
+        self.secret_key = settings.jwt_secret_key
+        self.algorithm = settings.jwt_algorithm
+        self.access_token_expire_minutes = settings.jwt_expiration_hours * 60
+        self.refresh_token_expire_days = 7  # Default value as it's missing in settings
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         """Verificar contraseña con manejo de errores seguro"""
@@ -359,7 +359,7 @@ def create_token_response(
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer",
-        "expires_in": settings.security.access_token_expire_minutes * 60,
+        "expires_in": settings.jwt_expiration_hours * 3600,
         "user": create_user_response(user),
     }
 

@@ -22,7 +22,7 @@ from sheily_core.a2a_protocol import a2a_system
 from sheily_core.agent_learning import LearningExperience, record_agent_experience
 from sheily_core.agent_quality import evaluate_agent_quality
 from sheily_core.agent_tracing import trace_agent_execution
-from sheily_core.multi_agent_system import multi_agent_system
+from sheily_core.agents.multi_agent_system import multi_agent_system
 
 logger = logging.getLogger(__name__)
 

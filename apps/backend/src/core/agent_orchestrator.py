@@ -143,7 +143,8 @@ class AgentOrchestrator:
         self._load_agent_instances()
 
         # Start orchestration loop
-        asyncio.create_task(self.orchestration_loop())
+        # DISABLED: asyncio.create_task(self.orchestration_loop())
+        # NOTE: Call start_orchestration() manually when event loop is available
 
     def _initialize_agents(self) -> Dict[str, AgentDefinition]:
         """Initialize the specialized agents across domains"""

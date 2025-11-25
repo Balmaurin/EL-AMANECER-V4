@@ -750,8 +750,9 @@ class SelfHealingOrchestrator:
                 from hotpatch_system import HotpatchSystem
                 self.hotpatch_system = HotpatchSystem()
                 hotpatch_available = True
+                logger.info("✅ HotpatchSystem cargado - Auto-repair en vivo activado")
             except ImportError as e:
-                logger.warning(f"⚠️ HotpatchSystem no disponible: {e}")
+                logger.debug(f"HotpatchSystem optional module not available: {e}")
                 hotpatch_available = False
 
             # Limitar a máximo 3 acciones por ciclo para evitar sobrecarga

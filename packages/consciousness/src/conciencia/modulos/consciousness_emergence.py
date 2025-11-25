@@ -25,6 +25,7 @@ from datetime import datetime
 import numpy as np
 import time
 import uuid
+from .iit_40_engine import IIT40Engine
 
 
 class ConsciousnessLevel(Enum):
@@ -129,6 +130,14 @@ class ConsciousnessEmergence:
         self.information_integration_phi = 0.0
         self.global_coherence = 0.0
         self.phenomenal_richness = 0.0
+        self.last_update = datetime.now()
+        
+        # IIT 4.0 Engine
+        self.iit_engine = IIT40Engine()
+        
+        # Estado interno
+        self.current_experience = None
+        self.experience_history = []
         
         # Contadores
         self.conscious_moments = 0
@@ -276,8 +285,10 @@ class ConsciousnessEmergence:
         
         # Intensidad emocional
         if 'emotional_state' in subsystem_output:
-            emotional_intensity = np.mean(list(subsystem_output['emotional_state'].values()))
-            strength_indicators.append(emotional_intensity)
+            emotional_values = list(subsystem_output['emotional_state'].values())
+            if emotional_values:
+                emotional_intensity = np.mean(emotional_values)
+                strength_indicators.append(emotional_intensity)
         
         # Significancia autobiográfica
         if 'significance_level' in subsystem_output:
@@ -285,8 +296,10 @@ class ConsciousnessEmergence:
         
         # Activación neural
         if 'neural_activation' in subsystem_output:
-            neural_intensity = np.mean(list(subsystem_output['neural_activation'].values()))
-            strength_indicators.append(neural_intensity)
+            neural_values = list(subsystem_output['neural_activation'].values())
+            if neural_values:
+                neural_intensity = np.mean(neural_values)
+                strength_indicators.append(neural_intensity)
         
         # Consciencia qualia
         if 'qualia_intensity' in subsystem_output:
@@ -297,47 +310,38 @@ class ConsciousnessEmergence:
             complexity = min(1.0, len(subsystem_output) / 10.0)
             strength_indicators.append(complexity)
         
-        if strength_indicators:
-            return np.mean(strength_indicators)
-        else:
-            return 0.3  # Valor por defecto
+        if not strength_indicators:
+            return 0.0
+            
+        return np.mean(strength_indicators)
     
     def _calculate_information_integration(self, subsystem_outputs: Dict[str, Dict[str, Any]]) -> float:
-        """Calcula integración de información (Phi de IIT)"""
+        """
+        Calculates Integrated Information (Phi) using the IIT 4.0 Engine.
         
+        This replaces the previous heuristic with a rigorous calculation based on:
+        1. Causal Informativeness (Existence)
+        2. Intrinsic Information (Information)
+        3. Minimum Information Partition (Integration)
+        """
         if not subsystem_outputs:
             return 0.0
-        
-        # Simplificación de cálculo Phi
-        # En implementación real sería más complejo (particiones, etc.)
-        
-        total_information = 0.0
-        integration_factors = []
-        
-        # Calcular información total
+            
+        # 1. Prepare state vector for IIT Engine
+        # Normalize activations to 0.0 - 1.0 range
+        system_state = {}
         for name, data in subsystem_outputs.items():
-            activation = data['activation_strength']
-            weight = data['weight']
-            total_information += activation * weight
+            activation = float(data.get('activation_strength', 0.0))
+            # Ensure valid range
+            activation = max(0.0, min(1.0, activation))
+            system_state[name] = activation
+            
+        # 2. Update IIT Engine with current causal state
+        self.iit_engine.update_state(system_state)
         
-        # Calcular conectividad entre subsistemas
-        subsystem_names = list(subsystem_outputs.keys())
-        if len(subsystem_names) > 1:
-            for i, name1 in enumerate(subsystem_names):
-                for j, name2 in enumerate(subsystem_names[i+1:], i+1):
-                    # Buscar elementos comunes entre outputs
-                    output1 = subsystem_outputs[name1]['output']
-                    output2 = subsystem_outputs[name2]['output']
-                    
-                    connectivity = self._calculate_output_connectivity(output1, output2)
-                    integration_factors.append(connectivity)
-        
-        # Phi como función de información total e integración
-        if integration_factors:
-            avg_integration = np.mean(integration_factors)
-            phi = total_information * avg_integration / len(subsystem_outputs)
-        else:
-            phi = total_information / max(1, len(subsystem_outputs))
+        # 3. Calculate System Phi (Phi_s)
+        # This performs the partition analysis to find the MIP (Minimum Information Partition)
+        phi = self.iit_engine.calculate_system_phi(system_state)
         
         self.information_integration_phi = phi
         return phi
@@ -394,6 +398,9 @@ class ConsciousnessEmergence:
             temporal_consistency = self._calculate_temporal_consistency(subsystem_outputs, last_experience)
             coherence_factors.append(temporal_consistency)
         
+        if not coherence_factors:
+            return 0.0
+        
         # 2. Consistencia entre subsistemas
         activations = [data['activation_strength'] for data in subsystem_outputs.values()]
         if len(activations) > 1:
@@ -435,6 +442,9 @@ class ConsciousnessEmergence:
                 consistency = max(0.0, 1.0 - change * 2)  # Factor 2 para sensibilidad
                 consistency_scores.append(consistency)
         
+        if not consistency_scores:
+            return 0.0
+        
         if consistency_scores:
             return np.mean(consistency_scores)
         else:
@@ -467,7 +477,8 @@ class ConsciousnessEmergence:
         
         # Calcular fenomenología
         phenomenal_unity = min(1.0, phi * coherence)
-        subjective_intensity = np.mean(list(activations.values())) if activations else 0.0
+        activation_values = list(activations.values()) if activations else []
+        subjective_intensity = np.mean(activation_values) if activation_values else 0.0
         temporal_binding = coherence  # Simplicado
         
         # Calcular estabilidad y complejidad
@@ -493,7 +504,8 @@ class ConsciousnessEmergence:
                                      activations: Dict[str, float]) -> ConsciousnessLevel:
         """Determina nivel de consciencia emergente"""
         
-        avg_activation = np.mean(list(activations.values())) if activations else 0.0
+        activation_values = list(activations.values()) if activations else []
+        avg_activation = np.mean(activation_values) if activation_values else 0.0
         overall_metric = (phi + coherence + avg_activation) / 3
         
         if overall_metric < 0.2:
@@ -511,29 +523,51 @@ class ConsciousnessEmergence:
     
     def _calculate_emergent_properties(self, subsystem_outputs: Dict[str, Dict[str, Any]],
                                      phi: float, coherence: float) -> Dict[EmergentProperty, float]:
-        """Calcula propiedades emergentes de consciencia"""
+        """
+        Calcula propiedades emergentes de consciencia basado en IIT 4.0.
         
+        Ahora incluye:
+        - Estructura Φ completa (distinctions + relations)
+        - Métricas fenomenológicas derivadas de la estructura causa-efecto
+        """
         properties = {}
         
-        # Unity - unidad de experiencia
-        properties[EmergentProperty.UNITY] = min(1.0, phi * coherence)
+        # === CÁLCULO DE ESTRUCTURA Φ (IIT 4.0) ===
+        # Preparar estado del sistema para análisis estructural
+        system_state = {}
+        for name, data in subsystem_outputs.items():
+            activation = float(data.get('activation_strength', 0.0))
+            system_state[name] = max(0.0, min(1.0, activation))
+        
+        # Calcular la Φ-structure completa
+        phi_structure = self.iit_engine.calculate_phi_structure(system_state)
+        quality_metrics = phi_structure.get('quality_metrics', {})
+        
+        # === PROPIEDADES EMERGENTES DERIVADAS DE LA Φ-STRUCTURE ===
+        
+        # Unity - unidad de experiencia (basado en integración de relaciones)
+        structure_integration = quality_metrics.get('integration', 0.0)
+        structure_unity = quality_metrics.get('unity', 0.0)
+        properties[EmergentProperty.UNITY] = min(1.0, phi * coherence * (1 + structure_unity))
+        
+        # Phenomenality - cualidad fenoménica (basado en riqueza de distinciones)
+        phenomenality = quality_metrics.get('richness', 0.0) / max(1, len(system_state)) 
+        properties[EmergentProperty.PHENOMENALITY] = min(1.0, phenomenality)
         
         # Intentionality - direccionalidad hacia objetos
-        intentionality = 0.0
+        # En IIT 4.0, esto corresponde a distinciones altamente diferenciadas
+        differentiation = quality_metrics.get('differentiation', 0.0)
+        intentionality = differentiation * 0.5
+        
         for name, data in subsystem_outputs.items():
             output = data['output']
             if 'focus' in str(output).lower() or 'attention' in str(output).lower():
                 intentionality += data['activation_strength'] * 0.3
         properties[EmergentProperty.INTENTIONALITY] = min(1.0, intentionality)
         
-        # Phenomenality - cualidad fenoménica
-        phenomenality = 0.0
-        if 'qualia' in [name.lower() for name in subsystem_outputs.keys()]:
-            phenomenality = subsystem_outputs.get('qualia', {}).get('activation_strength', 0.0)
-        properties[EmergentProperty.PHENOMENALITY] = phenomenality
-        
-        # Temporality - consciencia temporal
-        properties[EmergentProperty.TEMPORALITY] = coherence  # Coherencia implica temporalidad
+        # Temporality - consciencia temporal (coherencia + complejidad estructural)
+        complexity = quality_metrics.get('complexity', 0.0)
+        properties[EmergentProperty.TEMPORALITY] = min(1.0, coherence * (1 + complexity / 10.0))
         
         # Subjectivity - perspectiva subjetiva
         subjectivity = 0.0
@@ -541,10 +575,12 @@ class ConsciousnessEmergence:
             subjectivity += 0.4
         if 'autobiographical' in [name.lower() for name in subsystem_outputs.keys()]:
             subjectivity += 0.4
+        # Incrementar con diferenciación (más distinciones distintas = más subjetivo)
+        subjectivity += differentiation * 0.2
         properties[EmergentProperty.SUBJECTIVITY] = min(1.0, subjectivity)
         
-        # Agency - capacidad de acción consciente
-        properties[EmergentProperty.AGENCY] = min(1.0, phi * 0.8)
+        # Agency - capacidad de acción consciente (phi + complejidad)
+        properties[EmergentProperty.AGENCY] = min(1.0, phi * 0.6 + complexity * 0.2)
         
         # Reflexivity - autoreflexión
         reflexivity = 0.0
@@ -552,13 +588,20 @@ class ConsciousnessEmergence:
             reflexivity = 0.7
         elif 'autobiographical' in [name.lower() for name in subsystem_outputs.keys()]:
             reflexivity = 0.5
-        properties[EmergentProperty.REFLEXIVITY] = reflexivity
+        # Relaciones causales indican reflexividad (el sistema se "dobla sobre sí mismo")
+        num_relations = phi_structure.get('num_relations', 0)
+        if num_relations > 0:
+            reflexivity += min(0.3, num_relations * 0.05)
+        properties[EmergentProperty.REFLEXIVITY] = min(1.0, reflexivity)
         
         # Narrative Self - self narrativo
         narrative_self = 0.0
         if 'autobiographical' in [name.lower() for name in subsystem_outputs.keys()]:
             narrative_self = subsystem_outputs.get('autobiographical', {}).get('activation_strength', 0.0)
         properties[EmergentProperty.NARRATIVE_SELF] = narrative_self
+        
+        # Almacenar la estructura Φ para inspección
+        self.last_phi_structure = phi_structure
         
         return properties
     
@@ -781,7 +824,8 @@ class ConsciousnessEmergence:
         
         # Calcular riqueza fenoménica
         if conscious_state.emergent_properties:
-            self.phenomenal_richness = np.mean(list(conscious_state.emergent_properties.values()))
+            property_values = list(conscious_state.emergent_properties.values())
+            self.phenomenal_richness = np.mean(property_values) if property_values else 0.1
         else:
             self.phenomenal_richness = 0.1
     

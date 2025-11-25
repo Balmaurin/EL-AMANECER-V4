@@ -32,6 +32,7 @@ psutil>=5.9,<8
 cryptography>=42
 pyjwt[crypto]>=2.8,<3
 bcrypt>=4,<5
+pyotp>=2.9,<3
 python-json-logger>=2,<3
 structlog>=24,<26
 

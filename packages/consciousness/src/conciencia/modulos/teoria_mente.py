@@ -201,3 +201,286 @@ class TheoryOfMind:
         complexity_factor = min(1.0, complexity_score / 5.0)
         
         self.system_social_intelligence = (interaction_factor * 0.4) + (complexity_factor * 0.6)
+
+
+# =============================================================================
+# INTEGRATION WITH ADVANCED THEORY OF MIND (LEVELS 8-10)
+# =============================================================================
+
+try:
+    from .teoria_mente_avanzada import (
+        AdvancedTheoryOfMind,
+        BeliefType,
+        SocialStrategy
+    )
+    ADVANCED_TOM_AVAILABLE = True
+    print("✅ Advanced Theory of Mind (Levels 8-10) available")
+except ImportError:
+    ADVANCED_TOM_AVAILABLE = False
+    print("⚠️  Advanced Theory of Mind not available (install teoria_mente_avanzada.py)")
+
+
+class UnifiedTheoryOfMind:
+    """
+    Unified Theory of Mind system combining basic (Levels 1-7) and advanced (Levels 8-10).
+    
+    Provides seamless integration between:
+    - Basic ToM: Single-agent mental state modeling
+    - Advanced ToM: Multi-agent belief hierarchies, strategic reasoning, cultural context
+    
+    Usage:
+        tom = UnifiedTheoryOfMind()
+        
+        # Basic update (Level 1-7)
+        tom.update_model("user123", conscious_moment)
+        
+        # Advanced multi-agent interaction (Level 8-10)
+        if tom.has_advanced_capabilities:
+            result = await tom.process_social_interaction(
+                actor="agent_a",
+                target="agent_b",
+                interaction_type="negotiation",
+                content={"text": "Let's collaborate"}
+            )
+    """
+    
+    def __init__(self, enable_advanced: bool = True, max_belief_depth: int = 5):
+        """
+        Initialize Unified Theory of Mind.
+        
+        Args:
+            enable_advanced: Enable advanced ToM (Levels 8-10) if available
+            max_belief_depth: Maximum depth for belief hierarchies (Level 8)
+        """
+        # Basic ToM (Levels 1-7)
+        self.basic_tom = TheoryOfMind()
+        
+        # Advanced ToM (Levels 8-10)
+        self.advanced_tom = None
+        self.has_advanced_capabilities = False
+        
+        if enable_advanced and ADVANCED_TOM_AVAILABLE:
+            try:
+                self.advanced_tom = AdvancedTheoryOfMind(max_belief_depth=max_belief_depth)
+                self.has_advanced_capabilities = True
+                print(f"🧠 Unified ToM initialized with FULL CAPABILITIES (Levels 1-10)")
+            except Exception as e:
+                print(f"⚠️  Advanced ToM initialization failed: {e}")
+                print(f"🧠 Unified ToM initialized with basic capabilities (Levels 1-7)")
+        else:
+            print(f"🧠 Unified ToM initialized with basic capabilities (Levels 1-7)")
+    
+    def update_model(self, user_id: str, conscious_moment: Dict[str, Any]):
+        """
+        Update user model with basic ToM (Levels 1-7).
+        
+        This is the primary interface for single-user mental state tracking.
+        """
+        self.basic_tom.update_model(user_id, conscious_moment)
+    
+    def get_user_model(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """Get basic mental state model for a user"""
+        return self.basic_tom.get_user_model(user_id)
+    
+    def get_social_intelligence_score(self) -> float:
+        """Get overall social intelligence score"""
+        basic_score = self.basic_tom.get_social_intelligence_score()
+        
+        if self.has_advanced_capabilities and self.advanced_tom:
+            # Get advanced ToM level
+            status = self.advanced_tom.get_comprehensive_status()
+            advanced_level = status.get("overall_tom_level", 6.0)
+            
+            # Combine scores (weighted average)
+            # BasicToM contributes 40%, AdvancedToM contributes 60%
+            return (basic_score * 0.4) + ((advanced_level / 10.0) * 0.6)
+        
+        return basic_score
+    
+    def get_tom_level(self) -> Tuple[float, str]:
+        """
+        Get current Theory of Mind level according to ConsScale.
+        
+        Returns:
+            (level, description) where level is 1-10 and description explains capabilities
+        """
+        if not self.has_advanced_capabilities:
+            # Basic ToM: Levels 1-7 based on social intelligence
+            score = self.basic_tom.get_social_intelligence_score()
+            if score < 0.2:
+                return (1.0, "Level 1: Basic user modeling")
+            elif score < 0.4:
+                return (4.0, "Level 4: Attentional - can track user focus")
+            elif score < 0.6:
+                return (6.0, "Level 6: Emotional - models emotions and intent")
+            else:
+                return (7.0, "Level 7: Self-Conscious - advanced single-user ToM")
+        
+        # Advanced ToM: Levels 8-10
+        status = self.advanced_tom.get_comprehensive_status()
+        level = status.get("overall_tom_level", 6.0)
+        
+        if level >= 10.0:
+            return (10.0, "Level 10: Human-Like - cultural modeling, Turing-capable")
+        elif level >= 9.0:
+            return (9.0, "Level 9: Social - Machiavellian strategic reasoning")
+        elif level >= 8.0:
+            return (8.0, "Level 8: Empathic - multi-agent belief hierarchies")
+        else:
+            return (7.0, "Level 7: Self-Conscious - transitioning to multi-agent")
+    
+    async def process_social_interaction(
+        self,
+        actor: str,
+        target: str,
+        interaction_type: str,
+        content: Dict[str, Any],
+        context: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Process multi-agent social interaction (Level 8-10).
+        
+        Requires advanced ToM capabilities.
+        
+        Args:
+            actor: Agent initiating interaction
+            target: Target agent
+            interaction_type: Type of interaction (request, offer, challenge, etc.)
+            content: Interaction content
+            context: Additional context
+            
+        Returns:
+            Complete ToM analysis including beliefs, strategy, cultural assessment
+            
+        Raises:
+            RuntimeError: If advanced ToM not available
+        """
+        if not self.has_advanced_capabilities:
+            raise RuntimeError(
+                "Advanced ToM (Levels 8-10) not available. "
+                "Enable with enable_advanced=True and install teoria_mente_avanzada.py"
+            )
+        
+        return await self.advanced_tom.process_social_interaction(
+            actor, target, interaction_type, content, context
+        )
+    
+    def create_belief_hierarchy(
+        self,
+        agent_chain: List[str],
+        final_content: str,
+        confidence: float = 0.8
+    ) -> Optional[str]:
+        """
+        Create hierarchical belief (Level 8): "A believes that B believes that C believes X"
+        
+        Args:
+            agent_chain: List of agents [A, B, C, ...]
+            final_content: The deepest belief content
+            confidence: Confidence level
+            
+        Returns:
+            belief_id or None if advanced ToM not available
+        """
+        if not self.has_advanced_capabilities:
+            logger.warning("Belief hierarchies require Advanced ToM (Level 8+)")
+            return None
+        
+        return self.advanced_tom.belief_tracker.create_belief_hierarchy(
+            agent_chain, final_content, confidence
+        )
+    
+    def evaluate_strategic_action(
+        self,
+        actor: str,
+        target: str,
+        strategy_type: str,
+        context: Optional[Dict[str, Any]] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Evaluate strategic social action (Level 9).
+        
+        Args:
+            actor: Agent performing action
+            target: Target agent
+            strategy_type: Strategy type (cooperation, deception, alliance, etc.)
+            context: Additional context
+            
+        Returns:
+            Strategic action evaluation or None if not available
+        """
+        if not self.has_advanced_capabilities:
+            logger.warning("Strategic reasoning requires Advanced ToM (Level 9+)")
+            return None
+        
+        try:
+            strategy = SocialStrategy[strategy_type.upper()]
+        except KeyError:
+            logger.error(f"Invalid strategy type: {strategy_type}")
+            return None
+        
+        action = self.advanced_tom.strategic_reasoner.evaluate_strategic_action(
+            actor, target, strategy, context or {}
+        )
+        
+        return {
+            "strategy": action.action_type.value,
+            "expected_payoff": action.expected_payoff,
+            "risk_level": action.risk_level,
+            "ethical_score": action.ethical_score,
+            "description": action.description,
+            "predicted_responses": action.predicted_responses
+        }
+    
+    def assign_culture(self, agent_id: str, cultures: List[str]):
+        """
+        Assign cultural background to agent (Level 10).
+        
+        Args:
+            agent_id: Agent identifier
+            cultures: List of culture identifiers
+        """
+        if not self.has_advanced_capabilities:
+            logger.warning("Cultural modeling requires Advanced ToM (Level 10)")
+            return
+        
+        self.advanced_tom.cultural_engine.assign_culture_to_agent(agent_id, cultures)
+    
+    def get_comprehensive_status(self) -> Dict[str, Any]:
+        """Get complete status of all ToM subsystems"""
+        basic_status = {
+            "users_modeled": len(self.basic_tom.user_models),
+            "social_intelligence": self.basic_tom.get_social_intelligence_score()
+        }
+        
+        if self.has_advanced_capabilities:
+            advanced_status = self.advanced_tom.get_comprehensive_status()
+            advanced_status["basic_tom"] = basic_status
+            return advanced_status
+        
+        tom_level, description = self.get_tom_level()
+        basic_status["tom_level"] = tom_level
+        basic_status["capabilities"] = description
+        basic_status["advanced_available"] = False
+        
+        return basic_status
+
+
+# Module-level convenience instance
+_unified_tom_instance: Optional[UnifiedTheoryOfMind] = None
+
+
+def get_unified_tom(enable_advanced: bool = True) -> UnifiedTheoryOfMind:
+    """
+    Get singleton instance of Unified Theory of Mind.
+    
+    Args:
+        enable_advanced: Enable advanced ToM capabilities
+        
+    Returns:
+        UnifiedTheoryOfMind instance
+    """
+    global _unified_tom_instance
+    if _unified_tom_instance is None:
+        _unified_tom_instance = UnifiedTheoryOfMind(enable_advanced=enable_advanced)
+    return _unified_tom_instance

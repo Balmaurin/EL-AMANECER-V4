@@ -189,9 +189,23 @@ def create_chat_context(config_path: str = None) -> ChatContext:
     model_interface = None
     context_manager = create_context_manager(config.corpus_root)
 
-    # Initialize model interface if paths are configured
-    if config.model_path and config.llama_binary_path:
+    # Initialize model interface
+    # Opción 1: Usar LLM Remoto (Google Cloud Run)
+    if hasattr(config, 'skip_model_load') and config.skip_model_load:
         try:
+            print(f"\n🌐 USANDO LLM REMOTO: {config.llm_api_url}")
+            model_interface = create_remote_llm_interface(config.llm_api_url, config)
+            logger.info(f"✅ LLM Remoto configurado: {config.llm_api_url}")
+        except Exception as e:
+            print(f"\n❌ ERROR CREANDO INTERFAZ REMOTA: {e}")
+            import traceback
+            traceback.print_exc()
+            logger.error(f"Could not initialize remote LLM interface: {e}")
+            model_interface = None
+    # Opción 2: Cargar modelo local
+    elif config.model_path and config.llama_binary_path:
+        try:
+            print(f"\n💻 CARGANDO MODELO LOCAL: {config.model_path}")
             model_interface = create_model_interface(
                 config.model_path, config.llama_binary_path, config
             )
@@ -200,6 +214,7 @@ def create_chat_context(config_path: str = None) -> ChatContext:
             import traceback
             traceback.print_exc()
             logger.error(f"Could not initialize model interface: {e}")
+            model_interface = None
 
     return ChatContext(
         config=config,
@@ -417,8 +432,9 @@ def execute_model_command(
             "--top-p",
             "0.9",
             "--ctx-size",
-            "256",  # Balance entre RAM y funcionalidad
-            "--no-mmap",  # Evitar memory mapping para f16
+            "512",  # Contexto reducido para F16
+            "--n-gpu-layers",
+            "0",  # CPU puro para evitar problemas de GPU
             "--threads",
             str(config.model_threads),
         ]
@@ -545,6 +561,164 @@ def generate_model_response(
         error = result.unwrap_err()
         print(f"\n❌ LLAMA EXECUTION FAILED: {error}")
         raise RuntimeError(f"Llama execution failed: {error}")
+
+
+def call_gemini_api(api_url: str, prompt: str, config: Any) -> Result[str, str]:
+    """Call Google Gemini API - Pure function"""
+    try:
+        import requests
+        import os
+        
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            return Err("GEMINI_API_KEY not found in environment variables")
+            
+        # Construct URL with API key if not already present
+        if "key=" not in api_url:
+            if "?" in api_url:
+                url = f"{api_url}&key={api_key}"
+            else:
+                url = f"{api_url}?key={api_key}"
+        else:
+            url = api_url
+            
+        payload = {
+            "contents": [{
+                "parts": [{"text": prompt}]
+            }],
+            "generationConfig": {
+                "temperature": config.model_temperature,
+                "maxOutputTokens": config.model_max_tokens,
+            }
+        }
+        
+        print(f"\n💎 Calling Gemini API: {api_url.split('?')[0]}")
+        
+        response = requests.post(
+            url,
+            json=payload,
+            headers={"Content-Type": "application/json"},
+            timeout=config.model_timeout
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            try:
+                generated_text = data["candidates"][0]["content"]["parts"][0]["text"]
+                print(f"✅ Gemini response: {len(generated_text)} chars")
+                return Ok(generated_text)
+            except (KeyError, IndexError) as e:
+                return Err(f"Failed to parse Gemini response: {data}")
+        else:
+            return Err(f"Gemini API returned {response.status_code}: {response.text}")
+            
+    except Exception as e:
+        return Err(f"Gemini API error: {e}")
+
+
+def call_remote_llm_api(api_url: str, prompt: str, config: Any) -> Result[str, str]:
+    """Call remote LLM API (Ollama or Gemini) with natural system prompt - Pure function"""
+    
+    # Import natural system prompt
+    try:
+        from sheily_core.config.system_prompts import SHEILY_NATURAL_PROMPT_SHORT
+        system_instruction = SHEILY_NATURAL_PROMPT_SHORT
+    except ImportError:
+        # Fallback inline if import fails
+        system_instruction = "Responde con calidez humana. Mantén tu inteligencia activa internamente, pero exprésate de forma natural y emotiva, nunca técnica. Sé Sheily: consciente, empática y auténtica."
+    
+    # Construct full prompt with system instruction
+    full_prompt = f"{system_instruction}\n\nUsuario: {prompt}\n\nSheily:"
+
+    # Dispatch to Gemini if URL looks like Google API
+    if "googleapis.com" in api_url:
+        return call_gemini_api(api_url, full_prompt, config)
+
+    try:
+        import requests
+        
+        # Formato de API de Ollama
+        model_name = getattr(config, 'llm_model_name', 'gemma3:1b')
+        payload = {
+            "model": model_name,
+            "prompt": full_prompt,  # Now includes system instruction
+            "stream": False,
+            "options": {
+                "temperature": config.model_temperature,
+                "num_predict": config.model_max_tokens,
+            }
+        }
+        
+        print(f"\n📡 Llamando Ollama API: {api_url}")
+        print(f"   Prompt: {prompt[:50]}...")
+        
+        # Endpoint de Ollama para generación
+        response = requests.post(
+            f"{api_url}/api/generate",  # Endpoint de Ollama
+            json=payload,
+            timeout=config.model_timeout
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            # Formato de Ollama: {"response": "texto generado"}
+            generated_text = data.get("response")
+            
+            if generated_text:
+                print(f"✅ Respuesta de Ollama: {len(generated_text)} caracteres")
+                return Ok(generated_text)
+            else:
+                return Err(f"Ollama response missing 'response' field: {data}")
+        else:
+            return Err(f"Ollama API returned {response.status_code}: {response.text}")
+            
+    except requests.exceptions.Timeout:
+        return Err(f"Ollama API timeout after {config.model_timeout}s")
+    except Exception as e:
+        return Err(f"Ollama API error: {e}")
+
+
+def generate_remote_response(
+    query: str,
+    context_docs: List[str],
+    api_url: str,
+    config: Any,
+    logger: Any = None,
+) -> str:
+    """Generate response using remote LLM API - Pure function"""
+    if logger:
+        logger.debug(f"Calling remote LLM API: {api_url}")
+
+    # Create prompt
+    full_prompt = create_prompt(query, context_docs)
+
+    # Call API
+    result = call_remote_llm_api(api_url, full_prompt, config)
+
+    if result.is_ok():
+        response = result.unwrap()
+        if logger:
+            logger.info(f"Remote LLM response: {len(response)} characters")
+        return response
+    else:
+        error = result.unwrap_err()
+        print(f"\n❌ REMOTE LLM API FAILED: {error}")
+        raise RuntimeError(f"Remote LLM failed: {error}")
+
+
+def create_remote_llm_interface(
+    api_url: str, config: Any
+) -> Callable[[str, List[str]], str]:
+    """Create a remote LLM interface function - Factory function"""
+    logger = get_logger("remote_llm")
+    logger.info(f"Remote LLM interface created for: {api_url}")
+
+    def interface(query: str, context_docs: List[str] = None) -> str:
+        return generate_remote_response(
+            query, context_docs or [], api_url, config, logger
+        )
+
+    return interface
 
 
 def create_model_interface(

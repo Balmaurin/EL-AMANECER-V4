@@ -4,7 +4,7 @@ Centralizes all configuration to avoid conflicts and duplication
 """
 
 import os
-from typing import List, Optional
+from typing import ClassVar, List, Optional
 
 from pydantic_settings import BaseSettings
 
@@ -36,7 +36,7 @@ class UnifiedSettings(BaseSettings):
     database_url: str = os.getenv("DATABASE_URL", "sqlite:///./data/sheily_ai.db")
     connection_pool_size: int = 10
     db_pool_size: int = 10 # Alias for compatibility
-    connection_timeout: int = 30
+    connection_timeout: int = 60
 
     # === CACHE SETTINGS ===
     cache_enabled: bool = True
@@ -48,15 +48,27 @@ class UnifiedSettings(BaseSettings):
     redis_url: Optional[str] = os.getenv("REDIS_URL")
 
     # === AI/ML SETTINGS ===
-    model_path: str = "models/llama-3.2-3b/Llama-3.2-3B-Instruct-f16.gguf"
-    llama_binary_path: str = "llama-cli.exe"
+    # Rutas Absolutas para evitar errores de contexto
+    base_dir: ClassVar[str] = r"c:\Users\YO\Desktop\EL-AMANECERV3-main"
+    
+    # LLM Remoto (Ollama en Google Cloud Run)
+    llm_api_url: Optional[str] = os.getenv("LLM_API_URL", "https://sheily-ai-backend-749968449333.europe-west1.run.app")
+    llm_model_name: str = os.getenv("LLM_MODEL_NAME", "gemma3:1b")
+    skip_model_load: bool = os.getenv("SKIP_MODEL_LOAD", "true").lower() == "true"
+    
+    # LLM Local (Solo si SKIP_MODEL_LOAD=false)
+    model_path: str = f"{base_dir}\\modelsLLM\\llama-3.2-3b\\Llama-3.2-3B-Instruct-f16.gguf"
+    llama_binary_path: str = f"{base_dir}\\llama_cpp_install\\bin\\llama-cli.exe"
+    
+    # Parámetros Comunes
     model_max_tokens: int = 512
     model_temperature: float = 0.7
     model_threads: int = 4
-    model_timeout: int = 30
+    model_timeout: int = 300
 
     # === RAG SETTINGS ===
     corpus_root: str = "data"
+    branches_config_path: str = "config/branches.json"
     context_max_length: int = 2000
     max_context_docs: int = 3
     rag_similarity_threshold: float = 0.7

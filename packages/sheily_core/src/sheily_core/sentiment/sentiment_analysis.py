@@ -16,7 +16,7 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from pydantic import BaseModel
@@ -443,3 +443,6 @@ async def batch_analyze_endpoint(texts: List[str]) -> Dict[str, Any]:
         return {"success": True, "data": [r.to_dict() for r in results]}
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+# Alias for compatibility
+SentimentAnalyzer = SentimentAnalysisAPI

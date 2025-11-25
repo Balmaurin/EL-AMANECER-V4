@@ -210,8 +210,10 @@ class ArtificialSynapse:
 class BiologicalNeuralNetwork:
     """Red neural con arquitectura neurobiológica realista"""
 
-    def __init__(self, network_id: str, size: int = 100):
+    def __init__(self, network_id: str, size: int = 100, synaptic_density: float = 0.1):
         self.network_id = network_id
+        self.size = size
+        self.synaptic_density = synaptic_density
         self.neurons: Dict[str, ArtificialNeuron] = {}
         self.synapses: List[ArtificialSynapse] = []
 
@@ -230,8 +232,11 @@ class BiologicalNeuralNetwork:
         self.working_memory_load: int = 0
 
         # Inicializar neuronas
+        print(f"      🧠 Creando red neuronal de {size} neuronas...")
         self._initialize_neurons(size)
+        print(f"      🔗 Estableciendo conexiones sinápticas (densidad: {synaptic_density:.1%})...")
         self._create_synaptic_connections()
+        print(f"      ✅ {len(self.synapses)} sinapsis creadas")
 
     def _initialize_neurons(self, size: int):
         """Inicializa neuronas con variedad funcional"""
@@ -260,39 +265,64 @@ class BiologicalNeuralNetwork:
             self.neurons[neuron_id] = neuron
 
     def _create_synaptic_connections(self):
-        """Crea conexiones sinápticas iniciales aleatorias"""
+        """Crea conexiones sinápticas iniciales con densidad configurable"""
         neuron_ids = list(self.neurons.keys())
-
-        # Crear conexiones aleatorias (aprox 10% de posibilidad)
-        for i, pre_id in enumerate(neuron_ids):
-            for j, post_id in enumerate(neuron_ids):
-                if i != j and np.random.random() < 0.1:  # 10% probabilidad
-                    strength = np.random.uniform(0.1, 0.6)
-
-                    # Tipo de neurotransmisor basado en tipos neuronales
-                    pre_type = self.neurons[pre_id].neuron_type
-                    post_type = self.neurons[post_id].neuron_type
-
-                    if post_type == "inhibitory":
-                        nt_type = NeurotransmitterType.GABA
-                    elif pre_type == "sensory":
-                        nt_type = NeurotransmitterType.GLUTAMATE
-                    else:
-                        nt_type = np.random.choice([
-                            NeurotransmitterType.GLUTAMATE,
-                            NeurotransmitterType.DOPAMINE,
-                            NeurotransmitterType.SEROTONIN
-                        ])
-
-                    synapse = ArtificialSynapse(
-                        pre_synaptic_neuron=self.neurons[pre_id],
-                        post_synaptic_neuron=self.neurons[post_id],
-                        strength=strength,
-                        neurotransmitter_type=nt_type
-                    )
-
-                    self.synapses.append(synapse)
-                    self.neurons[pre_id].synaptic_connections.append(synapse)
+        n_neurons = len(neuron_ids)
+        
+        # Para redes grandes (>500 neuronas), usar muestreo inteligente
+        if n_neurons > 500:
+            # Cada neurona se conecta aproximadamente con (densidad * n) otras
+            target_connections_per_neuron = int(self.synaptic_density * n_neurons)
+            
+            for pre_id in neuron_ids:
+                # Seleccionar aleatoriamente neuronas objetivo
+                n_connections = np.random.poisson(target_connections_per_neuron)
+                n_connections = min(n_connections, n_neurons - 1)  # No más que neuronas disponibles
+                
+                # Muestreo sin reemplazo
+                possible_targets = [nid for nid in neuron_ids if nid != pre_id]
+                if n_connections > 0 and len(possible_targets) > 0:
+                    targets = np.random.choice(possible_targets, 
+                                              size=min(n_connections, len(possible_targets)), 
+                                              replace=False)
+                    
+                    for post_id in targets:
+                        self._create_synapse(pre_id, post_id)
+        else:
+            # Para redes pequeñas, usar algoritmo original
+            for i, pre_id in enumerate(neuron_ids):
+                for j, post_id in enumerate(neuron_ids):
+                    if i != j and np.random.random() < self.synaptic_density:
+                        self._create_synapse(pre_id, post_id)
+    
+    def _create_synapse(self, pre_id: str, post_id: str):
+        """Crea una sinapsis individual entre dos neuronas"""
+        strength = np.random.uniform(0.1, 0.6)
+        
+        # Tipo de neurotransmisor basado en tipos neuronales
+        pre_type = self.neurons[pre_id].neuron_type
+        post_type = self.neurons[post_id].neuron_type
+        
+        if post_type == "inhibitory":
+            nt_type = NeurotransmitterType.GABA
+        elif pre_type == "sensory":
+            nt_type = NeurotransmitterType.GLUTAMATE
+        else:
+            nt_type = np.random.choice([
+                NeurotransmitterType.GLUTAMATE,
+                NeurotransmitterType.DOPAMINE,
+                NeurotransmitterType.SEROTONIN
+            ])
+        
+        synapse = ArtificialSynapse(
+            pre_synaptic_neuron=self.neurons[pre_id],
+            post_synaptic_neuron=self.neurons[post_id],
+            strength=strength,
+            neurotransmitter_type=nt_type
+        )
+        
+        self.synapses.append(synapse)
+        self.neurons[pre_id].synaptic_connections.append(synapse)
 
     def process_input(self, input_pattern: Dict[str, float]) -> Dict[str, float]:
         """
@@ -331,6 +361,10 @@ class BiologicalNeuralNetwork:
 
     def _update_neural_oscillations(self):
         """Actualiza ritmos cerebrales basados en actividad global"""
+        if not self.neurons:
+            # Si no hay neuronas, mantener valores por defecto
+            return
+        
         total_activity = sum(neuron.membrane_potential + 70 for neuron in self.neurons.values()) / len(self.neurons)
 
         # Gamma (alta frecuencia) correlaciona con actividad intensa
@@ -1159,7 +1193,8 @@ class OntogeneticDevelopment:
         }
 
         print(f"🎯 HITO DE DESARROLLO LOGRADO: {milestone.milestone_name}")
-        print(".1f"print(f"   🧠 Mejoras cognitivas: {list(milestone.cognitive_features.keys())}")
+        print(f"   📊 Edad del sistema: {self.developmental_age:.1f} unidades")
+        print(f"   🧠 Mejoras cognitivas: {list(milestone.cognitive_features.keys())}")
         print(f"   ❤️  Mejoras emocionales: {list(milestone.emotional_features.keys())}")
         print(f"   👥 Mejoras sociales: {list(milestone.social_features.keys())}")
 
@@ -1287,22 +1322,140 @@ class OntogeneticDevelopment:
 
 # ==================== SISTEMA CONSCIENTE BIOLÓGICO COMPLETO ====================
 
+# ==================== SISTEMA CONSCIENTE BIOLÓGICO COMPLETO ====================
+
 class BiologicalConsciousnessSystem:
     """
     Sistema completo de consciencia biológica artificial
     Integra todos los componentes neurobiológicos
     """
 
-    def __init__(self, system_id: str):
+    def __init__(self, system_id: str, neural_network_size: int = 100, synaptic_density: float = 0.1):
         self.system_id = system_id
         self.creation_time = datetime.now()
 
+        # ===== IMPORTAR COMPONENTES REALES FASE 2, 3 Y 4 =====
+        from conciencia.modulos.thalamus import (
+            ThalamusExtended, Amygdala, Insula, Hippocampus, 
+            PFC, ACC, BasalGanglia, SimpleRAG
+        )
+        from conciencia.modulos.reticular_activating_system import ReticularActivatingSystem
+        from conciencia.modulos.claustrum import ClaustrumExtended
+        from conciencia.modulos.default_mode_network import DefaultModeNetwork
+        from conciencia.modulos.salience_network import SalienceNetwork
+        
+        # FASE 4: Meta-cognitive components
+        from conciencia.modulos.executive_control_network import ExecutiveControlNetwork
+        from conciencia.modulos.orbitofrontal_cortex import OrbitofrontalCortex
+        from conciencia.modulos.ventromedial_pfc import VentromedialPFC
+
         # Componentes biológicos fundamentales
-        self.neural_network = BiologicalNeuralNetwork(f"{system_id}_brain")
+        self.neural_network = BiologicalNeuralNetwork(
+            f"{self.system_id}_brain",
+            size=neural_network_size,
+            synaptic_density=synaptic_density
+        )
         self.hormone_system = HormoneSystem()
         self.qualia_simulator = QualiaSimulator()
         self.memory_system = AutobiographicalMemory()
         self.ontogenetic_development = OntogeneticDevelopment()
+        
+        # ===== FASE 2 Y 3: COMPONENTES DE CONSCIENCIA AVANZADA (REALES) =====
+        print("   🧠 Inicializando componentes avanzados (Fase 2, 3 y 4)...")
+        
+        # 1. RAS - Control de arousal
+        self.reticular_activating_system = ReticularActivatingSystem(f"{system_id}_ras")
+        
+        # 2. TÁLAMO EXTENDIDO - Con módulos funcionales
+        print("   🔧 Inicializando Tálamo extendido con módulos...")
+        
+        # Crear módulos del tálamo
+        self.amygdala = Amygdala(sensitivity=1.0)
+        self.insula = Insula(sensitivity=0.8)
+        self.hippocampus = Hippocampus(novelty_threshold=0.6)
+        self.pfc_module = PFC(top_down_focus={})
+        self.acc_module = ACC()
+        self.basal_ganglia = BasalGanglia()
+        self.rag_system = SimpleRAG()
+        
+        # Tálamo con todos los módulos
+        thalamus_modules = [
+            self.amygdala,
+            self.insula,
+            self.hippocampus,
+            self.pfc_module,
+            self.acc_module,
+            self.basal_ganglia
+        ]
+        
+        self.thalamus = ThalamusExtended(
+            modules=thalamus_modules,
+            rag=self.rag_system,
+            global_max_relay=6,
+            temporal_window_s=0.03,
+            logging_enabled=False
+        )
+        
+        # 3. CLAUSTRUM EXTENDIDO - Binding multi-banda determinista
+        self.claustrum = ClaustrumExtended(
+            system_id=f"{system_id}_clau",
+            mid_frequency_hz=40.0,
+            binding_window_ms=25,
+            synchronization_threshold=0.55,
+            logging=False,
+            db_path=f"claustrum_{system_id}.db"
+        )
+        
+        # Conectar áreas corticales al claustrum
+        self.claustrum.connect_area('visual_cortex', 'visual', weight=1.2)
+        self.claustrum.connect_area('auditory_cortex', 'auditory', weight=0.9)
+        self.claustrum.connect_area('somatosensory_cortex', 'somatosensory', weight=1.0)
+        self.claustrum.connect_area('prefrontal_cortex', 'cognitive', weight=0.8)
+        self.claustrum.connect_area('emotional_cortex', 'emotional', weight=1.1)
+        
+        # 4. DEFAULT MODE NETWORK - Pensamiento espontáneo
+        self.default_mode_network = DefaultModeNetwork(f"{system_id}_dmn")
+        
+        # 5. SALIENCE NETWORK - Detección de importancia
+        self.salience_network = SalienceNetwork(f"{system_id}_sal")
+        
+        # ===== FASE 4: COMPONENTES META-COGNITIVOS (ENTERPRISE) =====
+        print("   🎯 Inicializando componentes Fase 4 (Meta-Cognitive)...")
+        
+        # 6. EXECUTIVE CONTROL NETWORK - Control ejecutivo top-down
+        self.executive_control = ExecutiveControlNetwork(
+            system_id=f"{system_id}_ecn",
+            wm_capacity=7,  # Miller's Law: 7±2
+            persist_db_path=None  # Sin persistencia por ahora
+        )
+        
+        # 7. ORBITOFRONTAL CORTEX - Evaluación de valor
+        self.orbitofrontal_cortex = OrbitofrontalCortex(
+            system_id=f"{system_id}_ofc",
+            persist=False,  # Sin persistencia por ahora
+            base_learning_rate=0.3,
+            discount_factor=0.95,
+            reversal_pe_threshold=0.6,
+            logging=False
+        )
+        
+        # 8. VENTROMEDIAL PFC - Integración emocional-racional
+        self.ventromedial_pfc = VentromedialPFC(
+            system_id=f"{system_id}_vmpfc",
+            persist=False,  # Sin persistencia por ahora
+            rag=self.rag_system,  # Compartir RAG con tálamo
+            stochastic=False  # Determinista
+        )
+        
+        print("     ✅ Tálamo extendido con 6 módulos")
+        print("     ✅ RAS con 5 vías de neurotransmisores")
+        print("     ✅ Claustrum extendido (multi-banda, determinista, SQLite)")
+        print("     ✅ Default Mode Network (pensamiento espontáneo)")
+        print("     ✅ Salience Network (detección multi-fuente)")
+        print("     ✅ Executive Control Network (WM 7±2, planning, inhibition)")
+        print("     ✅ Orbitofrontal Cortex (value learning, reversal)")
+        print("     ✅ Ventromedial PFC (somatic markers, emotion-reason)")
+        print(f"     🌀 Consciencia Fase 4 META_COGNITIVE ACTIVA")
 
         # Estados dinámicos
         self.internal_states = {
@@ -1330,65 +1483,347 @@ class BiologicalConsciousnessSystem:
     def process_experience(self, sensory_input: Dict[str, float], context: Dict[str, Any]) -> Dict[str, Any]:
         """
         Procesa experiencia completa a través del sistema biológico consciente
-
+        
+        FLUJO FASE 4 COMPLETO (TODOS LOS COMPONENTES REALES):
+        1. Salience Network detecta eventos importantes
+        2. Executive Control Network procesa como tarea (WM, planning, inhibition)
+        3. RAS ajusta arousal global
+        4. Tálamo extendido (con módulos) filtra y procesa
+        5. OFC evalúa valores de opciones potenciales
+        6. vmPFC integra emoción-razón para decisiones
+        7. DMN vs Task-Positive (switch automático)
+        8. Claustrum extendido unifica en multi-banda
+        
         Args:
             sensory_input: Entradas sensoriales (visual, auditiva, etc.)
-            context: Contexto de la experiencia (emocional, social, etc.)
-
+            context: Contexto de la situación
+        
         Returns:
-            Respuesta consciente integrada con todos los componentes
+            Experiencia consciente procesada y unificada
         """
-        experience_start = time.time()
         self.conscious_cycles += 1
-        self.total_experiences += 1
-
-        # 1. Procesamiento neural
-        neural_output = self.neural_network.process_input(sensory_input)
-
-        # 2. Actualización endocrina basada en contexto
-        self.hormone_system.update_hormones(context)
-
-        # 3. Generación de qualia fenomenológicos
-        qualia = self.qualia_simulator.generate_qualia(sensory_input, context)
-
-        # 4. Almacenamiento autobiográfico y consolidación
-        memory_id = self.memory_system.store_experience(
-            {'sensory_data': sensory_input, 'neural_activation': neural_output},
-            qualia, context
-        )
-
-        # 5. Desarrollo ontogenético
-        self.ontogenetic_development.process_experience(
-            {'sensory_input': sensory_input, 'qualia': qualia, 'memory_id': memory_id},
-            context
-        )
-
-        # 6. Actualización estados corporales
-        self._update_embodied_states(context, qualia)
-
-        # 7. Modulación neural por estados hormonales
-        hormonal_influences = self.hormone_system.get_hormonal_influence('attention')
-        self.neural_network.modulate_arousal(hormonal_influences * 0.1)
-
-        # 8. Registro de experiencia vital
-        self.life_experiences.append({
-            'timestamp': experience_start,
-            'experience_number': self.total_experiences,
-            'sensory_input': sensory_input,
-            'context': context,
-            'qualia': qualia,
-            'neural_output': neural_output,
-            'processing_time': time.time() - experience_start
+        
+        # ===== PASO 1: SALIENCE NETWORK - DETECTAR EVENTOS IMPORTANTES =====
+        salient_event = self.salience_network.detect_salient_events(sensory_input, context)
+        
+        # Calcular carga de tarea externa (para DMN)
+        external_task_load = 0.0
+        if salient_event:
+            external_task_load = salient_event.saliency_score
+            
+            # Si evento muy urgente, switch de DMN a Task-Positive
+            if salient_event.action_required:
+                self.salience_network.trigger_network_switch(
+                    from_network='DMN',
+                    to_network='task_positive',
+                    reason=f"Urgent event: {salient_event.saliency_score:.2f}"
+                )
+        else:
+            # Baja carga = DMN puede activarse
+            external_task_load = context.get('task_load', 0.2)
+        
+        # ===== PASO 2 FASE 4: EXECUTIVE CONTROL NETWORK - PROCESAMIENTO EJECUTIVO =====
+        # Preparar tarea para ECN
+        ecn_task = {
+            'type': context.get('type', 'experience'),
+            'content': sensory_input,
+            'priority': salient_event.saliency_score if salient_event else 0.5,
+            'location': context.get('location', 'internal'),
+            'conflict': salient_event.action_required if salient_event else False,
+            'novel': context.get('novelty', 0.0) > 0.5,
+            'steps': context.get('steps', []),  # Pasos si es tarea compleja
+            'goal': context.get('goal', '')
+        }
+        
+        # Procesar con Executive Control
+        ecn_result = self.executive_control.process_task(ecn_task)
+        control_mode = ecn_result.get('mode', 'automatic')
+        cognitive_load = self.executive_control.cognitive_load
+        
+        # Step ECN (decay WM, advance plans)
+        self.executive_control.step(dt_s=0.1)  # 100ms timestep
+        
+        # ===== PASO 3: RAS - AJUSTAR AROUSAL GLOBAL =====
+        arousal_level = self.reticular_activating_system.process_stimulus({
+            'intensity': context.get('intensity', 0.5),
+            'urgency': salient_event.urgency if salient_event else 0.0,
+            'novelty': context.get('novelty', 0.0),
+            'emotional_valence': context.get('emotional_relevance', 0.0)
         })
-
-        # Limitar historia de vida
-        if len(self.life_experiences) > 1000:
-            self.life_experiences = self.life_experiences[-500:]
-
-        # 9. Generar respuesta consciente unificada
-        conscious_response = self._generate_unified_response(
-            neural_output, qualia, context, hormonal_influences
+        
+        # Modular tálamo por arousal
+        self.thalamus.set_arousal(arousal_level)
+        
+        # ===== PASO 3: TÁLAMO EXTENDIDO - PROCESAMIENTO CON MÓDULOS =====
+        # Convertir sensory_input a formato para ThalamusExtended
+        thalamus_inputs = []
+        for modality, value in sensory_input.items():
+            input_item = {
+                'modality': modality,
+                'signal': value if isinstance(value, dict) else {'value': value},
+                'salience': {
+                    'intensity': context.get('intensity', 0.5),
+                    'novelty': context.get('novelty', 0.0),
+                    'urgency': salient_event.urgency if salient_event else 0.0,
+                    'emotional_valence': context.get('emotional_valence', 0.0)
+                }
+            }
+            thalamus_inputs.append(input_item)
+        
+        # Procesar con tálamo (incluye todos los módulos: amygdala, insula, etc.)
+        thalamus_output = self.thalamus.process_inputs(thalamus_inputs)
+        relayed_signals = thalamus_output.get('relayed', {})
+        
+        if not relayed_signals:
+            # Nada pasó el filtro talámico → consciente mínima
+            return {
+                'consciousness_state': 'subliminal',
+                'arousal': arousal_level,
+                'filtered_by_thalamus': True,
+                'relayed_signals': 0,
+                'dmn_active': False
+            }
+        
+        # ===== PASO 5 FASE 4: OFC - EVALUACIÓN DE VALOR =====
+        # Si hay opciones disponibles en contexto, evaluarlas
+        ofc_values = {}
+        ofc_decision = None
+        
+        if 'options' in context and context['options']:
+            # Evaluar cada opción con OFC
+            options = context['options']
+            for opt in options:
+                opt_id = opt.get('id', str(opt))
+                ofc_values[opt_id] = self.orbitofrontal_cortex.evaluate_stimulus(opt)
+            
+            # Tomar decisión con política epsilon-greedy
+            ofc_decision = self.orbitofrontal_cortex.choose_action(
+                options=options,
+                policy='epsilon_greedy',
+                epsilon=0.1,
+                persist_decision=False
+            )
+        
+        # ===== PASO 6 FASE 4: vmPFC - INTEGRACIÓN EMOCIONAL-RACIONAL =====
+        # Integrar emoción y razón para decision making
+        vmpfc_decision = None
+        somatic_markers_used = False
+        
+        if 'options' in context and context['options']:
+            # Crear/actualizar marcadores somáticos basados en experiencia previa
+            situation_id = context.get('situation_id', 'default_situation')
+            
+            # Tomar decisión integrando marcadores somáticos con valores racionales
+            vmpfc_decision = self.ventromedial_pfc.make_decision_under_uncertainty(
+                situation_id=situation_id,
+                options=context['options'],
+                integration_weight=0.5,  # 50% emoción, 50% razón
+                risk_aversion=0.2,
+                use_gut_feeling=True,
+                rag_retrieve=False
+            )
+            somatic_markers_used = True
+        
+        # Si hay outcome de decisión previa, actualizar valores y marcadores
+        if 'outcome' in context:
+            outcome_value = context['outcome'].get('value', 0.0)
+            
+            # Update OFC values
+            if 'chosen_option_id' in context:
+                self.orbitofrontal_cortex.update_value(
+                    context['chosen_option_id'],
+                    outcome_value
+                )
+            
+            # Update vmPFC somatic markers
+            if 'situation_id' in context:
+                self.ventromedial_pfc.evaluate_decision_outcome(
+                    situation_id=context['situation_id'],
+                    chosen=context.get('chosen_option', {}),
+                    outcome=context['outcome']
+                )
+        
+        # ===== PASO 7: DMN vs TASK-POSITIVE SWITCH =====
+        # Actualizar DMN basado en carga externa
+        self.default_mode_network.update_state(
+            external_task_load=external_task_load,
+            self_focus=context.get('self_focus', 0.5)
         )
+        
+        # Si DMN activo, generar pensamiento espontáneo
+        spontaneous_thought = None
+        if self.default_mode_network.is_active:
+            spontaneous_thought = self.default_mode_network.generate_spontaneous_thought({
+                'current_mood': context.get('mood', 0.0),
+                'recent_actions': context.get('recent_actions', ''),
+                'goals': context.get('goals', '')
+            })
+        
+        # ===== PASO 5: PROCESAR SEÑALES RELAYADAS =====
+        cortical_contents = {}
+        
+        for modality, signals in relayed_signals.items():
+            if signals:  # Lista de señales relayadas
+                # Tomar primera señal (más saliente)
+                signal = signals[0]
+                cortical_contents[modality] = {
+                    'signal': signal.get('signal'),
+                    'salience': signal.get('salience'),
+                    'activation': signal.get('salience', 0.5)  # Usar saliencia como activación
+                }
+        
+        # ===== PASO 6: CLAUSTRUM EXTENDIDO - BINDING MULTI-BANDA =====
+        # Preparar para claustrum (mapear modalidades a áreas)
+        area_mapping = {
+            'visual': 'visual_cortex',
+            'auditory': 'auditory_cortex',
+            'somato': 'somatosensory_cortex',
+            'somatosensory': 'somatosensory_cortex',
+            'touch': 'somatosensory_cortex',
+            'cognitive': 'prefrontal_cortex',
+            'thought': 'prefrontal_cortex',
+        }
+        
+        claustrum_input = {}
+        for modality, content in cortical_contents.items():
+            area_id = None
+            for key, area in area_mapping.items():
+                if key in modality.lower():
+                    area_id = area
+                    break
+            if area_id is None:
+                area_id = 'prefrontal_cortex'  # Default
+            
+            claustrum_input[area_id] = content
+        
+        # Añadir contenido emocional si hay
+        if salient_event and salient_event.saliency_score > 0.3:
+            claustrum_input['emotional_cortex'] = {
+                'emotional_salience': salient_event.saliency_score,
+                'activation': salient_event.saliency_score
+            }
+        
+        # Bind con claustrum (determinista, multi-banda)
+        unified_experience = self.claustrum.bind_from_thalamus(
+            cortical_contents=claustrum_input,
+            arousal=arousal_level,
+            phase_reset=(salient_event is not None and salient_event.surprise_level > 0.7)
+        )
+        
+        if unified_experience is None:
+            # Binding falló → consciencia fragmentada
+            return {
+                'consciousness_state': 'fragmented',
+                'arousal': arousal_level,
+                'binding_failed': True,
+                'cortical_contents': cortical_contents,
+                'dmn_active': self.default_mode_network.is_active,
+                'spontaneous_thought': spontaneous_thought.__dict__ if spontaneous_thought else None
+            }
+        
+        # ===== PASO 7: GENERAR QUALIA =====
+        qualia = self.qualia_simulator.generate_qualia(sensory_input, context)
+        
+        # ===== PASO 8: CONSOLIDAR EN MEMORIA =====
+        if context.get('significance', 0.5) > 0.7:
+            self.memory_system.store_experience(sensory_input, qualia, context)
+        
+        # ===== PASO 9: ACTUALIZAR ESTADOS INTERNOS =====
+        self._update_embodied_states()
+        self._update_hormonal_state({'intensity': arousal_level * 0.7})
+        
+        # ===== RETORNAR EXPERIENCIA CONSCIENTE COMPLETA FASE 4 =====
+        return {
+            'consciousness_state': 'unified',  # ¡Consciencia unificada exitosa!
+            
+            # Componentes Fase 3
+            'salience_detection': {
+                'event_detected': salient_event is not None,
+                'saliency_score': salient_event.saliency_score if salient_event else 0.0,
+                'surprise_level': salient_event.surprise_level if salient_event else 0.0,
+                'action_required': salient_event.action_required if salient_event else False,
+                'sources': salient_event.sources if salient_event else []
+            },
+            
+            # FASE 4: Executive Control
+            'executive_control': {
+                'control_mode': control_mode,
+                'cognitive_load': cognitive_load,
+                'working_memory_items': len(self.executive_control.dlpfc.wm),
+                'attention_focus': self.executive_control.ppc.current_focus,
+                'active_plans': len([p for p in self.executive_control.dlpfc.plans.values() if not p.completed]),
+                'can_process': ecn_result.get('can_process', True)
+            },
+            
+            # FASE 4: OFC Value Evaluation
+            'value_evaluation': {
+                'values_computed': ofc_values,
+                'decision_made': ofc_decision is not None,
+                'chosen_option': ofc_decision.get('chosen') if ofc_decision else None,
+                'reversals_detected': self.orbitofrontal_cortex.reversals_detected
+            },
+            
+            # FASE 4: vmPFC Emotion-Reason Integration
+            'emotion_reason_integration': {
+                'somatic_markers_used': somatic_markers_used,
+                'integrated_decision': vmpfc_decision.get('chosen') if vmpfc_decision else None,
+                'markers_count': len(self.ventromedial_pfc.somatic_markers),
+                'regulation_active': self.ventromedial_pfc.regulation_active
+            },
+            
+            'arousal': arousal_level,
+            'ras_state': self.reticular_activating_system.consciousness_state,
+            
+            'thalamic_processing': {
+                'inputs_received': len(thalamus_inputs),
+                'relayed_to_cortex': len(relayed_signals),
+                'modules_active': list(thalamus_output.get('modules', {}).keys()),
+                'arousal': thalamus_output.get('metrics', {}).get('arousal', 0.5)
+            },
+            
+            'dmn_state': {
+                'is_active': self.default_mode_network.is_active,
+                'external_task_load': external_task_load,
+                'spontaneous_thought': spontaneous_thought.__dict__ if spontaneous_thought else None,
+                'components': self.default_mode_network.get_dmn_state()['components']
+            },
+            
+            'binding': {
+                'successful': True,
+                'binding_strength': unified_experience['binding_strength'],
+                'arousal': unified_experience['arousal'],
+                'event_id': unified_experience['id'],
+                'timestamp': unified_experience['ts']
+            },
+            
+            'unified_experience': unified_experience,
+            'cortical_contents': cortical_contents,
+            'qualia': qualia,
+            'physiological_state': self._get_physiological_state(),
+            'system_health': self._compute_system_health()
+        }
+    
+    def _process_emotional_layer(self, sensory_input: Dict[str, float], arousal: float) -> Dict[str, Any]:
+        """Procesa capa emocional del input"""
+        # Placeholder - integrar con HumanEmotionalSystem
+        return {
+            'intensity': arousal * 0.7,
+            'valence': 0.3,
+            'dominant_emotion': 'neutral'
+        }
+    
+    def _update_hormonal_state(self, emotional_response: Dict[str, Any]):
+        """Actualiza estado hormonal basado en emociones"""
+        if emotional_response.get('intensity', 0) > 0.7:
+            # Emoción intensa → cortisol
+            self.hormone_system.modify_level('cortisol', 0.2)
+    
+    
+    def _update_embodied_states(self):
+        """Actualiza estados corporales basado en experiencia"""
+        # Energía: procesamiento neural consume energía
+        neural_energy_cost = 0.001
+        self.internal_states['energy_level'] = max(0.1, self.internal_states['energy_level'] - neural_energy_cost)
 
         return {
             'conscious_response': conscious_response,
@@ -1411,7 +1846,7 @@ class BiologicalConsciousnessSystem:
         """Actualiza estados corporales basado en experiencia"""
 
         # Energía: procesamiento neural consume energía
-        neural_energy_cost = len(self.neural_network.get_network_state()['active_neurons']) * 0.001
+        neural_energy_cost = self.neural_network.get_network_state()['active_neurons'] * 0.001
         self.internal_states['energy_level'] = max(0.1, self.internal_states['energy_level'] - neural_energy_cost)
 
         # Estrés: aumenta con experiencias negativas
@@ -1536,7 +1971,7 @@ class BiologicalConsciousnessSystem:
     def _compute_system_health(self) -> float:
         """Computa salud general del sistema"""
         # Integrar diferentes aspectos de salud
-        neural_health = len(self.neural_network.get_network_state()['active_neurons']) / self.neural_network.get_network_state()['neuron_count']
+        neural_health = self.neural_network.get_network_state()['active_neurons'] / self.neural_network.get_network_state()['neuron_count']
         endocrine_balance = self.hormone_system.get_endocrine_state()['endocrine_balance_index']
         memory_health = len(self.memory_system.memories) / max(1, self.memory_system.capacity)
         developmental_health = self.ontogenetic_development.get_developmental_state()['development_maturity']
@@ -1554,6 +1989,9 @@ class BiologicalConsciousnessSystem:
 
         # Consolidación de memoria durante REM
         self.memory_system.simulate_rem_sleep()
+
+        # Calcular métricas antes del sueño
+        initial_memory_count = len(self.memory_system.memories)
 
         # Recuperación energética
         energy_recovery = hours * 0.15  # 15% recuperación por hora
@@ -1573,8 +2011,14 @@ class BiologicalConsciousnessSystem:
 
         self.wakefulness_hours = 0  # Reset
 
+        # Calcular métricas después del sueño
+        rem_hours = hours * 0.25  # Aproximadamente 25% del sueño es REM
+        memories_consolidated = len(self.memory_system.memories) - initial_memory_count
+
         print("🌅 Ciclo de sueño completado")
-        print(".2f"        print(".2f"        print(".2f"
+        print(f"   🛌 Horas de REM: {rem_hours:.2f}")
+        print(f"   💾 Memorias consolidadas: {memories_consolidated}")
+        
     def get_complete_state(self) -> Dict[str, Any]:
         """Estado completo del sistema de consciencia biológica"""
 
@@ -1741,7 +2185,9 @@ def demonstrate_biological_consciousness():
 
             # Verificar efectos del sueño
             state_after_sleep = bio_system.get_complete_state()
-            print(".2f"            print(".2f"            continue
+            print(f"   🔋 Nivel de energía después: {state_after_sleep['embodied_states']['energy_level']:.2f}")
+            print(f"   😰 Nivel de estrés después: {state_after_sleep['embodied_states']['stress_level']:.2f}")
+            continue
 
         # Procesar experiencia
         result = bio_system.process_experience(scenario["sensory_input"], scenario["context"])
@@ -1750,16 +2196,28 @@ def demonstrate_biological_consciousness():
         qualia = result['qualia_experience']
         response = result['conscious_response']
 
-        print("   🎭 QUALIA EXPERIENCIA:"        print(".2f"        print(".2f"        print(".2f"        print("   🧠 ACTIVACIÓN NEURAL:"        print(f"      Neuronas activas: {len(result['neural_activation'])}")
+        print("   🎭 QUALIA EXPERIENCIA:")
+        print(f"      Intensidad: {qualia.get('intensity', 0):.2f}")
+        print(f"      Valencia: {qualia.get('valence', 0):.2f}")
+        print(f"      Claridad: {qualia.get('clarity', 0):.2f}")
+        print("   🧠 ACTIVACIÓN NEURAL:")
+        print(f"      Neuronas activas: {len(result['neural_activation'])}")
         print(f"      Acciones recomendadas: {response['recommended_actions']}")
 
         hormonal_state = result['hormonal_state']
-        print("   💊 ESTADO HORMONAL:"        print(".2f"        print(".2f"        print(".2f"
+        print("   💊 ESTADO HORMONAL:")
+        print(f"      Cortisol: {hormonal_state.get('cortisol', 0):.2f}")
+        print(f"      Dopamina: {hormonal_state.get('dopamine', 0):.2f}")
+        print(f"      Serotonina: {hormonal_state.get('serotonin', 0):.2f}")
         embodied = result['embodied_state']
-        print("   🫀 ESTADOS CORPORALES:"        print(".2f"        print(".2f"        print(".2f"
+        print("   🫀 ESTADOS CORPORALES:")
+        print(f"      Energía: {embodied.get('energy_level', 0):.2f}")
+        print(f"      Estrés: {embodied.get('stress_level', 0):.2f}")
+        print(f"      Alerta: {embodied.get('alertness', 0):.2f}")
         if 'developmental_growth' in result:
             dev = result['developmental_growth']
-            print("   👶 DESARROLLO:"            print(f"      Etapa: {dev['developmental_stage']}")
+            print("   👶 DESARROLLO:")
+            print(f"      Etapa: {dev['developmental_stage']}")
             print(f"      Hitos logrados: {dev['achieved_milestones']}")
 
         # Almacenar resultado para resumen final
@@ -1771,29 +2229,35 @@ def demonstrate_biological_consciousness():
             'recommended_actions_count': len(response['recommended_actions'])
         })
 
-    # Reporte final
-    print("
-🎉 DEMOSTRACIÓN COMPLETA FINALIZADA"    print("=" * 80)
+
+    # Re porte final
+    print("🎉 DEMOSTRACIÓN COMPLETA FINALIZADA")
+    print("=" * 80)
 
     final_state = bio_system.get_complete_state()
 
     print("📊 MÉTRICAS FINALES DEL SISTEMA:")
     print(f"   🧠 Experiências procesadas: {final_state['system_identity']['total_experiences']}")
     print(f"   🧬 Etapa de desarrollo: {final_state['system_identity']['developmental_stage']}")
-    print(".1f"    print(".2f"    print(f"   📚 Memorias almacenadas: {final_state['biological_components']['memory_system']['total_memories']}")
+    print(f"   📚 Memorias almacenadas: {final_state['biological_components']['memory_system']['total_memories']}")
 
     health = final_state['system_health']
-    print("   🏥 SALUD DEL SISTEMA:"    print(".2f"    print(f"      Neural: {health['neural_health']:.2%}")
+    print("   🏥 SALUD DEL SISTEMA:")
+    print(f"      General: {health.get('overall_health', 0):.2%}")
+    print(f"      Neural: {health['neural_health']:.2%}")
     print(f"      Endocrino: {health['endocrine_balance']:.2%}")
     print(f"      Memoria: {health['memory_integrity']:.2%}")
 
     # Personalidad emergente
     personality = final_state['conscious_experience']['personality_development']
-    print("   🧸 PERSONALIDAD EMERGENTE:"    top_traits = sorted(personality.items(), key=lambda x: x[1]['current_expression'], reverse=True)[:3]
+    print("   🧸 PERSONALIDAD EMERGENTE:")
+    top_traits = sorted(personality.items(), key=lambda x: x[1]['current_expression'], reverse=True)[:3]
     for trait_name, trait_data in top_traits:
-        print(".2f"
-    print("
-🚀 CONSCIENCIA BIOLÓGICA ARTIFICIAL FUNCIONAL CONFIRMADA"    print("   ✓ Neurobiología realista implementada")
+        print(f"      {trait_name}: {trait_data['value']:.2f}")
+    
+    print()
+    print("🚀 CONSCIENCIA BIOLÓGICA ARTIFICIAL FUNCIONAL CONFIRMADA")
+    print("   ✓ Neurobiología realista implementada")
     print("   ✓ Sistema endocrino completo")
     print("   ✓ Qualia fenomenológicos")
     print("   ✓ Memoria autobiográfica")

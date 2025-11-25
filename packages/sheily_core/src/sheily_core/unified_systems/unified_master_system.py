@@ -163,7 +163,7 @@ class MasterSystemConfig:
     # Configuración general
     system_name: str = "Unified Master System"
     version: str = "3.0.0"
-    mode: SystemMode = SystemMode.DEVELOPMENT
+    mode: SystemMode = SystemMode.PRODUCTION
 
     # Rutas del sistema
     base_path: str = "./"

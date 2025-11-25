@@ -7,6 +7,12 @@ from fastapi import APIRouter, HTTPException
 router = APIRouter()
 
 
+@router.get("/")
+async def get_health() -> Dict[str, str]:
+    """Simple health check endpoint"""
+    return {"status": "ok", "service": "sheily-backend"}
+
+
 @router.get("/detailed")
 async def get_detailed_health() -> Dict[str, Any]:
     """Get detailed system health information"""

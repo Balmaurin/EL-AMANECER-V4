@@ -27,13 +27,17 @@ from typing import Any, Dict, List, Optional
 from ..system.master_orchestrator import MasterMCPOrchestrator  # <-- corregido path
 
 # Import opcional del brain learner para aprendizaje automático
-try:
-    from ...models.ml.neural_brain_learner import NeuralBrainLearner, auto_learn_project
-
-    BRAIN_LEARNER_AVAILABLE = True
-except ImportError:
-    print("⚠️  Neural brain learner not available - basic learning only")
-    BRAIN_LEARNER_AVAILABLE = False
+# DISABLED temporarily to avoid circular import issues with sheily_core.cache
+# TODO: Fix circular dependency between neural_brain_learner and cache modules
+BRAIN_LEARNER_AVAILABLE = False
+# try:
+#     from ...models.ml.neural_brain_learner import NeuralBrainLearner, auto_learn_project
+#     BRAIN_LEARNER_AVAILABLE = True
+# except ImportError as e:
+#     import traceback
+#     print(f"⚠️  Neural brain learner not available - basic learning only: {e}")
+#     traceback.print_exc()
+#     BRAIN_LEARNER_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

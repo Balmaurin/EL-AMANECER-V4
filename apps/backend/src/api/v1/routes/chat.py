@@ -11,17 +11,23 @@ from typing import List, Optional
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel
 
-from apps.backend.src.config.settings import settings
-from apps.backend.src.core.cache import cache_delete, cache_get, cache_set
+# Fix imports for running from start_api.py
+try:
+    from config.settings import settings
+    from core.cache import cache_delete, cache_get, cache_set
+except ImportError:
+    from apps.backend.src.config.settings import settings
+    from apps.backend.src.core.cache import cache_delete, cache_get, cache_set
 
 # Real AI Chat Engine - No fallbacks or mocks
-from sheily_core.chat_engine import create_chat_engine
+# Real AI Chat Engine - Robust Import
+chat_engine = None
+# We are using local llama-cpp-python directly in the route, so we don't need the core chat engine here.
+# This prevents the "Remote LLM" logs and initialization.
+print("[INFO] Chat Engine bypassed for local model integration")
 
-chat_engine = create_chat_engine()
-print("[INFO] Sheily Core AI Engine loaded successfully - No mocks or fallbacks")
 
-
-router = APIRouter(prefix="/api", tags=["chat"])
+router = APIRouter(tags=["chat"])
 
 
 # Pydantic models for API
@@ -29,6 +35,7 @@ class ChatMessage(BaseModel):
     role: str  # "user" or "assistant"
     content: str
     timestamp: Optional[datetime] = None
+    metadata: Optional[dict] = None  # Consciousness and agent metadata
 
 
 class ChatRequest(BaseModel):
@@ -56,17 +63,24 @@ class ConversationSummary(BaseModel):
     last_message: Optional[str] = None
 
 
-@router.post("/chat", response_model=ChatResponse)
+@router.post("/send", response_model=ChatResponse)
 async def chat_with_ai(
     request: ChatRequest, background_tasks: BackgroundTasks
 ) -> ChatResponse:
     """
-    Main chat endpoint for AI conversations
-    Supports caching, conversation management, and RAG
+    Main chat endpoint for AI conversations with Consciousness Enhancement
+    Flow: Gemini API (Priority) → LLM Response → Orchestrator Processing
     """
     start_time = time.time()
 
     try:
+        # Debug API Key
+        import os
+        key = os.getenv("GEMINI_API_KEY")
+        print(f"DEBUG: GEMINI_API_KEY present: {bool(key)}")
+        if key:
+            print(f"DEBUG: Key starts with: {key[:5]}...")
+
         # Generate conversation ID if not provided
         conversation_id = request.conversation_id or str(uuid.uuid4())
 
@@ -86,27 +100,134 @@ async def chat_with_ai(
                 cached=True,
             )
 
-        # Process with AI engine
-        ai_response = chat_engine(request.message, conversation_id)
+        # STEP 0: LOCAL GEMMA MODEL INTEGRATION
+        try:
+            from llama_cpp import Llama
+            import os
+            
+            # Global model cache to prevent reloading
+            if not hasattr(chat_with_ai, "model_cache"):
+                chat_with_ai.model_cache = None
+            
+            # Resolve absolute path
+            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+            # Adjust base_dir to project root (apps/backend/src/api/v1/routes -> apps/backend/src/api/v1 -> ... -> root)
+            # Actually, simpler to rely on CWD if start_api.py is run from root, but let's be safe
+            # Assuming CWD is project root
+            model_path = os.path.abspath("models/gemma-2-2b-it-q4_k_m.gguf")
+            
+            if not os.path.exists(model_path):
+                print(f"⚠️ [CHAT] Model not found at {model_path}")
+                # Fallback to relative if absolute fails
+                model_path = "models/gemma-2-2b-it-q4_k_m.gguf"
+            
+            if not chat_with_ai.model_cache:
+                print(f"🔷 [CHAT] Loading local Gemma model from {model_path}...")
+                if not os.path.exists(model_path):
+                     raise HTTPException(status_code=500, detail=f"Model file not found at {model_path}")
+                
+                # Initialize model (cached)
+                chat_with_ai.model_cache = Llama(
+                    model_path=model_path,
+                    n_ctx=2048,
+                    n_threads=4,
+                    verbose=False
+                )
+                print("✅ [CHAT] Local model loaded successfully")
+            
+            llm = chat_with_ai.model_cache
+            
+            # Professional system prompt
+            system_prompt = """You are SHEILY, a professional AI assistant. Follow these guidelines strictly:
+- Be helpful, clear, and concise
+- Use a warm but professional tone
+- NEVER use overly affectionate terms like "mi amor", "cariño", "mi vida", "corazón", "bebé"
+- Maintain appropriate professional boundaries
+- Be intelligent and empathetic, but not romantic
+- Provide accurate, helpful information
+- If you don't know something, admit it honestly"""
 
-        # Handle Sheily Core response
-        ai_content = (
-            ai_response.response
-            if hasattr(ai_response, "response")
-            else ai_response.content
-        )
-        tokens_used = getattr(ai_response, "tokens_used", None)
+            # Create prompt with system instruction
+            # Gemma chat template format: <start_of_turn>user\n{prompt}<end_of_turn>\n<start_of_turn>model\n
+            full_prompt = f"<start_of_turn>user\n{system_prompt}\n\n{request.message}<end_of_turn>\n<start_of_turn>model\n"
+            
+            print("🔷 [CHAT] Generating response with local model...")
+            output = llm(
+                full_prompt,
+                max_tokens=request.max_tokens or 512,
+                temperature=request.temperature or 0.7,
+                stop=["<end_of_turn>"],
+                echo=False
+            )
+            
+            ai_content = output["choices"][0]["text"]
+            tokens_used = estimate_tokens(ai_content)
+            print(f"✅ [CHAT] Local response generated: {len(ai_content)} chars")
+            
+        except Exception as e:
+            print(f"❌ [CHAT] Local model failed: {e}")
+            import traceback
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail=f"Local model error: {str(e)}")
+
+        # Validate we got a response
+        if not ai_content:
+            raise HTTPException(status_code=500, detail="No response from local model")
+
+        # STEP 2: Consciousness Enhancement (Full System Integration)
+        consciousness_metadata = None
+        final_content = ai_content
+        
+        try:
+            # Import the new bridge
+            from .consciousness_integration import get_consciousness_system
+            
+            # Get system instance
+            conscious_system = get_consciousness_system()
+            
+            if conscious_system.enabled:
+                print("🧠 [CHAT] Processing with Full Consciousness System...")
+                
+                # Process interaction
+                result = await conscious_system.process_chat_interaction(
+                    user_message=request.message,
+                    llm_base_response=ai_content,
+                    conversation_id=conversation_id
+                )
+                
+                # Extract results
+                final_content = result.get("enhanced_text", ai_content)
+                consciousness_metadata = result.get("metadata", {})
+                
+                print(f"✅ [CHAT] Consciousness processing complete. Active: {consciousness_metadata.get('active')}")
+            else:
+                print("⏭️ [CHAT] Consciousness disabled")
+                
+        except Exception as e:
+            print(f"❌ [CHAT] Consciousness Error: {e}")
+            # Fallback to base response
+            final_content = ai_content
+            consciousness_metadata = {"error": str(e), "fallback": True}
 
         # Cache the response (1 hour)
         if settings.cache_enabled:
-            cache_set(cache_key, ai_content, 3600)
+            cache_set(cache_key, final_content, 3600)
 
         # Prepare response
         response_time = time.time() - start_time
+        
+        # Build message with metadata if consciousness was active
+        message_metadata = {}
+        if consciousness_metadata:
+            message_metadata["consciousness"] = consciousness_metadata
+        
         response = ChatResponse(
             conversation_id=conversation_id,
             message=ChatMessage(
-                role="assistant", content=ai_content, timestamp=datetime.now()
+                role="assistant", 
+                content=final_content, 
+                timestamp=datetime.now(),
+                metadata=message_metadata if message_metadata else None
             ),
             response_time=response_time,
             cached=False,
@@ -115,12 +236,17 @@ async def chat_with_ai(
 
         # Background task: Update conversation in database
         background_tasks.add_task(
-            update_conversation_async, conversation_id, request.message, ai_content
+            update_conversation_async, conversation_id, request.message, final_content
         )
 
         return response
 
     except Exception as e:
+        import traceback
+        error_msg = f"Error processing chat request: {str(e)}\n{traceback.format_exc()}"
+        print(f"❌ [CHAT] Critical Error: {error_msg}")
+        with open("backend_error.log", "a") as f:
+            f.write(f"\n[{datetime.now()}] {error_msg}\n")
         raise HTTPException(
             status_code=500, detail=f"Error processing chat request: {str(e)}"
         )

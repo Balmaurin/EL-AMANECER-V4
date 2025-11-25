@@ -553,18 +553,72 @@ async def health_check():
 
 @app.post("/api/chat")
 async def chat_endpoint(chat_msg: ChatMessage):
-    """Endpoint para chat con IA"""
+    """Endpoint para chat con IA - Prioriza Gemini API"""
     try:
-        # Verificar en tiempo real si llama.cpp está disponible
+        import os
+        import requests
+        
+        # OPCIÓN 1: Intentar Gemini API primero si la clave está disponible
+        gemini_api_key = os.getenv("GEMINI_API_KEY")
+        
+        if gemini_api_key:
+            try:
+                logger.info("🔷 Intentando usar Gemini API...")
+                
+                # Configurar URL de Gemini
+                gemini_url = "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent"
+                
+                # Preparar payload para Gemini
+                payload = {
+                    "contents": [{
+                        "parts": [{"text": chat_msg.message}]
+                    }],
+                    "generationConfig": {
+                        "temperature": 0.7,
+                        "maxOutputTokens": 512,
+                    }
+                }
+                
+                # Llamar a Gemini API
+                response = requests.post(
+                    f"{gemini_url}?key={gemini_api_key}",
+                    json=payload,
+                    headers={"Content-Type": "application/json"},
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    gemini_response = data["candidates"][0]["content"]["parts"][0]["text"]
+                    
+                    logger.info(f"✅ Respuesta exitosa de Gemini: {len(gemini_response)} chars")
+                    
+                    # Guardar en base de datos
+                    db.save_chat_message(1, chat_msg.message, gemini_response)
+                    
+                    return {
+                        "response": gemini_response,
+                        "timestamp": datetime.now().isoformat(),
+                        "method": "gemini_api",
+                        "model_status": "Gemini Pro API disponible",
+                    }
+                else:
+                    logger.warning(f"⚠️ Gemini API devolvió {response.status_code}: {response.text}")
+                    # Continuar al fallback de llama.cpp
+                    
+            except Exception as e:
+                logger.warning(f"❌ Error con Gemini API: {e}")
+                # Continuar al fallback de llama.cpp
+
+        # OPCIÓN 2: Fallback a llama.cpp si Gemini no está disponible o falló
         root_dir = Path(__file__).parent.parent
         llama_cli_exists = (root_dir / "llama-cli.exe").exists()
         model_exists = (root_dir / "models" / "gemma-2-9b-it-Q4_K_M.gguf").exists()
         llama_ready = llama_cli_exists and model_exists
 
-        # Intentar usar llama.cpp primero si está disponible
         if llama_ready:
             try:
-                logger.info("🚀 Intentando usar llama.cpp...")
+                logger.info("🚀 Usando llama.cpp como fallback...")
                 response = chat_with_llama_cpp(chat_msg.message)
                 if response and not response.startswith("Error"):
                     method = "llama_cpp_gemma2"
@@ -572,7 +626,6 @@ async def chat_endpoint(chat_msg: ChatMessage):
                     logger.info("✅ Respuesta exitosa de llama.cpp")
                 else:
                     logger.warning(f"⚠️ llama.cpp devolvió error: {response}")
-                    # Fallback a respuestas simuladas
                     response = get_smart_fallback_response(chat_msg.message)
                     method = "simulated_fallback"
                     model_status = "Modo simulado - llama.cpp falló"

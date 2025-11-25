@@ -17,7 +17,7 @@ import asyncio
 
 # Importar el ML Orchestrator existente
 try:
-    sys.path.append(os.path.abspath("packages/sheily-core/src"))
+    sys.path.append(os.path.abspath("packages/sheily_core/src"))
     from sheily_core.models.ml.advanced_ml_orchestrator import (
         ContinualLearningSystem,
         MetaLearningSystem,
@@ -32,7 +32,7 @@ except ImportError as e:
 
 # Importar QR-LoRA para fine-tuning REAL
 try:
-    sys.path.append(os.path.abspath("packages/rag-engine/src"))
+    sys.path.append(os.path.abspath("packages/rag_engine/src"))
     from advanced.qr_lora import (
         QRLoRAConfig,
         QRLoRATrainer,

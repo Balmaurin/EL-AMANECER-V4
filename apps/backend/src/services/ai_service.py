@@ -21,12 +21,13 @@ import sys
 import os
 
 # Add packages to path dynamically to ensure they are found
+# Add packages to path dynamically to ensure they are found
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../packages/sheily-core/src")))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../packages/prompt-optimizer")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../packages")))
 
 try:
     from sheily_core.sentiment.sentiment_analysis import SentimentAnalyzer
-    from universal_prompt_optimizer import UniversalAutoImprovingPromptSystem, LlamaCppAdapter
+    from prompt_optimizer.universal_prompt_optimizer import UniversalAutoImprovingPromptSystem, LlamaCppAdapter
 except ImportError as e:
     print(f"Warning: Could not import advanced modules: {e}")
     SentimentAnalyzer = None
@@ -284,9 +285,12 @@ class AIReasoningEngine:
         if UniversalAutoImprovingPromptSystem and LlamaCppAdapter:
             try:
                 # Use the same model path as the main LLM
-                model_path = settings.llm.model_path if hasattr(settings, 'llm') else "modelsLLM/model.gguf"
+                model_path = settings.model_path if hasattr(settings, 'model_path') else "modelsLLM/model.gguf"
                 adapter = LlamaCppAdapter(model_path=model_path)
-                self.prompt_optimizer = UniversalAutoImprovingPromptSystem(llm_adapter=adapter)
+                self.prompt_optimizer = UniversalAutoImprovingPromptSystem(
+                    llm_adapter=adapter,
+                    judge_llm=adapter  # Usar el mismo modelo como juez (elimina warning)
+                )
                 print("✅ Real Prompt Optimizer Initialized")
             except Exception as e:
                 print(f"❌ Failed to initialize Prompt Optimizer: {e}")

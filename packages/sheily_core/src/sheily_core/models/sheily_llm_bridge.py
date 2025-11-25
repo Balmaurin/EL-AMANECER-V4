@@ -37,3 +37,21 @@ def call_llm(
         return (result.stdout or "").strip() or "[sin respuesta]"
     except Exception as e:
         return f"[ERROR llama.cpp] {e}"
+
+
+class SheilyLLMBridge:
+    """Puente para interactuar con modelos LLM locales"""
+    
+    def __init__(self, model_path: str = None, llama_bin: str = None):
+        self.model_path = Path(model_path) if model_path else MODEL_PATH
+        self.llama_bin = Path(llama_bin) if llama_bin else LLAMA_BIN
+    
+    def generate(self, prompt: str, n_predict: int = 128, temp: float = 0.7, 
+                 top_p: float = 0.9, threads: int = 4) -> str:
+        """Generar respuesta usando el modelo LLM"""
+        return call_llm(prompt, n_predict, temp, top_p, threads)
+    
+    async def generate_async(self, prompt: str, **kwargs) -> str:
+        """Versión asíncrona de generate"""
+        return self.generate(prompt, **kwargs)
+

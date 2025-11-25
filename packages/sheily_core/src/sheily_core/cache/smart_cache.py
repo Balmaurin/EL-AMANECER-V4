@@ -9,6 +9,7 @@ import json
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from functools import wraps
 from typing import Any, Callable, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
@@ -424,12 +425,16 @@ def get_smart_cache() -> SmartCache:
 
 # Convenience functions for easy integration
 async def cached_query(
-    query: str,
-    compute_func: Callable[..., Any],
+    query: str = None,
+    compute_func: Callable[..., Any] = None,
     params: Optional[Dict[str, Any]] = None,
     ttl: Optional[int] = None,
 ) -> Any:
     """Convenience function for cached queries"""
+    if query is None or compute_func is None:
+        # Si faltan argumentos, retornamos None o manejamos el error sin lanzar excepción crítica
+        return None
+        
     cache = get_smart_cache()
     return await cache.get_or_compute(query, compute_func, params, ttl)
 
@@ -455,3 +460,48 @@ response = await cached_query(
     ttl=1800  # 30 minutes
 )
 """
+
+# Alias for backward compatibility
+# cached = cached_query  <-- REMOVED, replaced by real decorator
+
+def cached(prefix_or_ttl=None, ttl: int = 3600):
+    """
+    Decorator for caching async functions.
+    Supports: @cached, @cached(ttl=60), @cached("prefix", ttl=60)
+    """
+    # Handle usage as @cached without arguments (func passed as first arg)
+    if callable(prefix_or_ttl):
+        func = prefix_or_ttl
+        return cached(prefix_or_ttl=None, ttl=ttl)(func)
+
+    prefix = prefix_or_ttl if isinstance(prefix_or_ttl, str) else None
+    actual_ttl = prefix_or_ttl if isinstance(prefix_or_ttl, int) else ttl
+
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            cache = get_smart_cache()
+            
+            # Generate key from args/kwargs
+            key_parts = [prefix or func.__name__]
+            # Simple serialization of args for key generation
+            try:
+                key_parts.extend([str(a) for a in args])
+                key_parts.extend([f"{k}={v}" for k, v in sorted(kwargs.items())])
+            except:
+                pass # Fallback if args not serializable
+                
+            query_key = ":".join(key_parts)
+            
+            # get_or_compute expects a compute_func that returns the value
+            # We wrap the original async func call in a lambda/partial
+            # Note: get_or_compute handles async compute_func internally
+            return await cache.get_or_compute(
+                query=query_key,
+                compute_func=lambda: func(*args, **kwargs),
+                ttl=actual_ttl
+            )
+        return wrapper
+    return decorator
+
+get_cache = get_smart_cache

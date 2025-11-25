@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
-router = APIRouter(prefix="/api/rag", tags=["rag"])
+router = APIRouter(tags=["rag"])
 
 # Mock data para documentos RAG
 MOCK_DOCUMENTS = [

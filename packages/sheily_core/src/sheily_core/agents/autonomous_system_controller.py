@@ -404,6 +404,10 @@ def stop_system_control():
 def get_system_status():
     return autonomous_controller.get_system_status_sync()
 
+def get_autonomous_controller():
+    """Retorna la instancia global del controlador autónomo"""
+    return autonomous_controller
+
 if __name__ == "__main__":
     print("🤖 SHEILY AI - COMPLETE SYSTEM (CONSCIOUSNESS + KNOWLEDGE + LEARNING)")
     print("=" * 70)

@@ -187,8 +187,39 @@ class SelfModel:
         # Memoria de rendimiento
         self.performance_history: List[Dict[str, Any]] = []
         self.learning_events: List[Dict[str, Any]] = []
+        
+        # Rasgos de personalidad
+        self.personality_traits: Dict[str, float] = {}
 
         print(f"🧠 Self Model inicializado para {system_name}")
+
+    def update_self_aspect(self, aspect: str, value: Any):
+        """Actualiza un aspecto del modelo del self"""
+        
+        if aspect == 'personality':
+            if isinstance(value, dict):
+                self.personality_traits.update(value)
+                
+        elif aspect == 'name':
+            self.identity['name'] = str(value)
+            
+        elif aspect == 'type':
+            self.identity['type'] = str(value)
+            
+        elif aspect == 'capabilities':
+            if isinstance(value, list):
+                for cap_name in value:
+                    if cap_name not in self.capability_assessments:
+                        # Inicializar nueva capacidad
+                        self.capability_assessments[cap_name] = CapabilityAssessment(
+                            capability_name=cap_name,
+                            current_skill_level=0.1, # Nivel inicial bajo
+                            confidence_in_assessment=0.3
+                        )
+        
+        elif aspect == 'identity':
+            if isinstance(value, dict):
+                self.identity.update(value)
 
     def _initialize_core_beliefs(self):
         """Inicializa creencias fundamentales sobre sí mismo"""

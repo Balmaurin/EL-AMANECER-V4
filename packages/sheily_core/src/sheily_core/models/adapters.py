@@ -587,6 +587,21 @@ __all__ = [
 ]
 
 # Log de inicialización del módulo
+# Log de inicialización del módulo
 logger.info(
     f"✅ Módulo adapters v{__version__} inicializado correctamente (Paradigma Funcional)"
 )
+
+class AdapterManager:
+    """Wrapper class for backward compatibility."""
+    def __init__(self, adapters_path: str = "modelsLLM/Adapters"):
+        self.adapters_path = Path(adapters_path)
+        self.context = create_adapter_context(self.adapters_path)
+        logger.info("AdapterManager initialized (Wrapper)")
+
+    def get_adapter(self, adapter_id: str):
+        config_path = self.adapters_path / f"{adapter_id}_config.json"
+        return load_adapter_config_from_file(config_path)
+
+__all__.append("AdapterManager")
+

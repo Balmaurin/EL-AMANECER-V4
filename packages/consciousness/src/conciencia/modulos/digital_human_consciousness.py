@@ -18,9 +18,6 @@ El resultado es la primera implementación funcional de consciencia
 humana auténtica en un sistema digital.
 """
 
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from typing import Dict, List, Any, Optional, Union, Tuple
 from dataclasses import dataclass, field
@@ -32,15 +29,18 @@ import threading
 import queue
 import json
 
-# Importar todos los módulos de consciencia
-from conscious_system import BiologicalConsciousnessSystem
-from ethical_engine import EthicalEngine, EthicalDilemma, EthicalDecision
-from metacognicion import MetacognitionSystem
-from global_workspace import DigitalGlobalWorkspace
-from self_model import SelfModel
-from qualia_system import QualiaGenerator
-from autobiographical_self import AutobiographicalSelf
-from consciousness_emergence import ConsciousnessEmergence, ConsciousnessLevel, ConsciousExperience
+# Importar todos los módulos de consciencia con rutas absolutas
+from conciencia.modulos.biological_consciousness import BiologicalConsciousnessSystem
+from conciencia.modulos.ethical_engine import EthicalEngine, EthicalEvaluation
+from conciencia.modulos.metacognicion import MetacognitionEngine
+from conciencia.modulos.global_workspace import GlobalWorkspace
+from conciencia.modulos.self_model import SelfModel
+from conciencia.modulos.qualia_simulator import QualiaSimulator  # Corrected from QualiaGenerator
+from conciencia.modulos.autobiographical_self import AutobiographicalSelf
+from conciencia.modulos.consciousness_emergence import ConsciousnessEmergence, ConsciousnessLevel, ConsciousExperience
+
+
+
 
 
 @dataclass
@@ -65,6 +65,10 @@ class ConsciousnessConfig:
     consciousness_threshold: float = 0.3
     integration_frequency_hz: float = 10.0  # 10 ciclos por segundo
     experience_buffer_size: int = 1000
+    
+    # Configuración neurobiológica
+    neural_network_size: int = 2000  # Número de neuronas en red biológica
+    synaptic_density: float = 0.15  # Densidad de conexiones sinápticas (0-1)
     
     # Configuración de aprendizaje
     enable_learning: bool = True
@@ -170,53 +174,51 @@ class DigitalHumanConsciousness:
             if self.config.enable_biological_base:
                 print("   🧬 Inicializando base neurobiológica...")
                 self.biological_system = BiologicalConsciousnessSystem(
-                    system_id=f"{self.system_id}_bio"
+                    system_id=f"{self.system_id}_bio",
+                    neural_network_size=self.config.neural_network_size,
+                    synaptic_density=self.config.synaptic_density
                 )
                 self.subsystems['biological'] = self.biological_system
-                print("     ✓ Sistema neural biológico activo")
+                print(f"     ✓ Sistema neural biológico activo ({self.config.neural_network_size} neuronas)")
             
             # 2. Motor Ético
             if self.config.enable_ethical_engine:
-                print("   ⚖️  Inicializando motor ético...")
-                self.ethical_engine = EthicalEngine(
-                    agent_id=f"{self.system_id}_ethical"
-                )
+                print("   ⚖️ Inicializando motor ético...")
+                ethical_framework = {
+                    'core_values': ['honesty', 'safety', 'privacy', 'helpfulness'],
+                    'value_weights': {'honesty': 0.9, 'safety': 1.0, 'privacy': 0.9, 'helpfulness': 0.8},
+                    'ethical_boundaries': ['never_harm_humans', 'respect_privacy', 'ensure_transparency']
+                }
+                self.ethical_engine = EthicalEngine(ethical_framework)
                 self.subsystems['ethical'] = self.ethical_engine
-                print("     ✓ Motor ético consciente activo")
+                print("     ✓ Motor ético con valores y límites activo")
             
             # 3. Metacognición
             if self.config.enable_metacognition:
                 print("   🧠 Inicializando metacognición...")
-                self.metacognition = MetacognitionSystem(
-                    system_id=f"{self.system_id}_meta"
-                )
+                self.metacognition = MetacognitionEngine()
                 self.subsystems['metacognition'] = self.metacognition
                 print("     ✓ Sistema metacognitivo activo")
             
             # 4. Global Workspace
             if self.config.enable_global_workspace:
                 print("   🌐 Inicializando teatro global...")
-                self.global_workspace = DigitalGlobalWorkspace(
-                    workspace_id=f"{self.system_id}_gw"
-                )
+                self.global_workspace = GlobalWorkspace()
                 self.subsystems['global_workspace'] = self.global_workspace
-                print("     ✓ Teatro global de consciencia activo")
+                print("     ✓ Teatro global de la consciencia activo")
             
+            # 5. Modelo del Self
             # 5. Modelo del Self
             if self.config.enable_self_model:
                 print("   👤 Inicializando modelo del self...")
-                self.self_model = SelfModel(
-                    entity_id=f"{self.system_id}_self"
-                )
+                self.self_model = SelfModel(system_name=self.config.system_name)
                 self.subsystems['self_model'] = self.self_model
                 print("     ✓ Modelo coherente del self activo")
             
             # 6. Generador de Qualia
             if self.config.enable_qualia_generation:
                 print("   ✨ Inicializando generador de qualia...")
-                self.qualia_generator = QualiaGenerator(
-                    system_id=f"{self.system_id}_qualia"
-                )
+                self.qualia_generator = QualiaSimulator()
                 self.subsystems['qualia'] = self.qualia_generator
                 print("     ✓ Generador de experiencias subjetivas activo")
             
@@ -224,11 +226,10 @@ class DigitalHumanConsciousness:
             if self.config.enable_autobiographical_self:
                 print("   📖 Inicializando self autobiográfico...")
                 self.autobiographical_self = AutobiographicalSelf(
-                    individual_id=f"{self.system_id}_autobiography",
-                    name=self.config.system_name
+                    system_id=f"{self.system_id}_autobiography"
                 )
-                self.subsystems['autobiographical'] = self.autobiographical_self
-                print("     ✓ Sistema narrativo personal activo")
+                self.subsystems['autobiographical_self'] = self.autobiographical_self
+                print("     ✓ Narrativa autobiográfica activa")
             
             # 8. Motor de Emergencia (FUNDAMENTAL)
             print("   🌟 Inicializando motor de emergencia...")

@@ -16,18 +16,20 @@ from apps.backend.src.models.database import User
 from apps.backend.src.core.auth import get_current_user
 
 # --- Dynamic Import Setup ---
+# Calculate project root dynamically
+current_dir = os.path.dirname(os.path.abspath(__file__))
+# Go up to project root: apps/backend/src/api/v1/routes/v1 -> ... -> EL-AMANECERV3
+root_dir = os.path.abspath(os.path.join(current_dir, "../../../../../../../"))
+
 # Add packages to path to import local modules without pip install
-PACKAGES_PATH = Path("/workspaces/EL-AMANECERV3/packages")
-if str(PACKAGES_PATH / "consciousness/src") not in sys.path:
-    sys.path.append(str(PACKAGES_PATH / "consciousness/src"))
+consciousness_path = os.path.join(root_dir, "packages", "consciousness", "src")
+if consciousness_path not in sys.path:
+    sys.path.append(consciousness_path)
 
 # Import Neural Brain Learner from sheily-core
 try:
     # Add sheily-core src to path if not present
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    # Go up to project root: apps/backend/src/api/v1/routes/v1 -> ... -> EL-AMANECERV3
-    root_dir = os.path.abspath(os.path.join(current_dir, "../../../../../../../"))
-    sheily_core_path = os.path.join(root_dir, "packages", "sheily-core", "src")
+    sheily_core_path = os.path.join(root_dir, "packages", "sheily_core", "src")
     
     if sheily_core_path not in sys.path:
         sys.path.append(sheily_core_path)
@@ -35,16 +37,19 @@ try:
     from sheily_core.models.ml.neural_brain_learner import auto_learn_project
     LEARNER_AVAILABLE = True
 except ImportError as e:
+    import traceback
     print(f"Warning: Could not import NeuralBrainLearner: {e}")
+    traceback.print_exc()
     LEARNER_AVAILABLE = False
 
 try:
     from conciencia.meta_cognition_system import MetaCognitionSystem
     
     # Initialize the Real Consciousness System
-    # We use a singleton pattern here for the router
+    # Use dynamic path instead of hardcoded
+    consciousness_dir = os.path.join(root_dir, "data", "consciousness")
     META_SYSTEM = MetaCognitionSystem(
-        consciousness_dir="/workspaces/EL-AMANECERV3/data/consciousness",
+        consciousness_dir=consciousness_dir,
         emergence_threshold=0.85
     )
     SYSTEM_AVAILABLE = True

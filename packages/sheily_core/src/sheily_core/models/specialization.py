@@ -1102,3 +1102,7 @@ class SpecializationEngine:
         logger.info(f"Estadísticas finales de SpecializationEngine: {final_stats}")
 
         logger.info("SpecializationEngine cerrado")
+
+# Alias for backward compatibility
+SpecializationManager = SpecializationEngine
+
