@@ -34,7 +34,7 @@ import numpy as np
 import logging
 
 logger = logging.getLogger("conscious_prompt_generator")
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.WARNING)  # Solo mostrar advertencias y errores
 if not logger.handlers:
     ch = logging.StreamHandler()
     ch.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
@@ -363,11 +363,12 @@ class PromptBuilder:
         self.style = style
         
         # Templates por estilo
+        # Templates por estilo (TRADUCIDOS A ESPAÑOL)
         self.templates = {
-            'professional': "[PERSONA: {persona}]\n[EMOTIONAL TONE: {tone}]\n[CONTEXT]: {context}\n[INSTRUCTIONS]: {instructions}\n[QUERY]: {content}",
-            'casual': "Hey! I'm {persona} ({tone}).\nContext: {context}\nWhat you need: {instructions}\nYour question: {content}",
-            'technical': "System: {persona}\nState: {tone}\nEnvironment: {context}\nObjective: {instructions}\nInput: {content}",
-            'creative': "✨ {persona} speaking ✨\nMood: {tone}\n💭 Context: {context}\n🎯 Goal: {instructions}\n❓ Query: {content}"
+            'professional': "[PERSONA: {persona}]\n[TONO EMOCIONAL: {tone}]\n[CONTEXTO]: {context}\n[INSTRUCCIONES]: {instructions}\n[CONSULTA]: {content}\n\nNOTA: Responde ÚNICAMENTE en ESPAÑOL.",
+            'casual': "¡Hola! Soy {persona} ({tone}).\nContexto: {context}\nObjetivo: {instructions}\nTu mensaje: {content}\n\n(Responde siempre en ESPAÑOL de forma natural)",
+            'technical': "Sistema: {persona}\nEstado: {tone}\nEntorno: {context}\nObjetivo: {instructions}\nEntrada: {content}\n\nIdioma de salida: ESPAÑOL.",
+            'creative': "✨ Habla {persona} ✨\nEstado de ánimo: {tone}\n💭 Contexto: {context}\n🎯 Meta: {instructions}\n❓ Consulta: {content}\n\nResponde creativamente en ESPAÑOL."
         }
     
     def build(self, content: str, context: Optional[str] = None,

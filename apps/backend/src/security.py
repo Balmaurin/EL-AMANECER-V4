@@ -9,3 +9,9 @@ def validate_timeout(timeout):
 
 def sanitize_filename(filename):
     return filename.replace("..", "").replace("/", "").replace("\\", "")
+
+def sanitize_path(path):
+    """Sanitiza un path para evitar directory traversal básico"""
+    if not path:
+        return ""
+    return path.replace("..", "")

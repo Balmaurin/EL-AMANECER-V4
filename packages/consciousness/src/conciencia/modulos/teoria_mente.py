@@ -16,7 +16,7 @@ Componente crítico para la Consciencia Artificial Funcional (Nivel 4).
 
 import time
 import numpy as np
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, field
 from datetime import datetime
 

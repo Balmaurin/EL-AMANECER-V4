@@ -271,8 +271,29 @@ class ConsciousnessOrchestrator:
         # 2. IIT: Calculate system Phi
         system_phi = self.iit_engine.calculate_system_phi(subsystem_states)
         
-        # 3. IIT: Calculate Φ-structure
-        phi_structure = self.iit_engine.calculate_phi_structure(subsystem_states)
+        # 3. Create simplified phi_structure from subsystem states
+        # Since calculate_phi_structure doesn't exist, we create a minimal structure
+        distinctions = []
+        for i, (subsystem_name, value) in enumerate(subsystem_states.items()):
+            distinctions.append({
+                'mechanism': [subsystem_name],
+                'phi_d': value * system_phi,  # Individual contribution
+                'effect_state': {subsystem_name: value},
+                'cause_repertoire': {subsystem_name: value},
+                'effect_repertoire': {subsystem_name: value}
+            })
+        
+        phi_structure = {
+            'system_phi': system_phi,
+            'num_distinctions': len(distinctions),
+            'distinctions': distinctions,
+            'relations': [],  # Simplified - no relations computed
+            'quality_metrics': {
+                'unity': system_phi * 100,
+                'complexity': len(distinctions) * system_phi,
+                'informativeness': sum(subsystem_states.values()) / max(1, len(subsystem_states))
+            }
+        }
         
         # 4. GWT: Competition and workspace update
         broadcasts = self.gwt_bridge.update_workspace(phi_structure, external_attention)
@@ -297,3 +318,4 @@ class ConsciousnessOrchestrator:
             "integration_quality": phi_structure.get('quality_metrics', {}),
             "global_access": len(broadcasts) > 0
         }
+
