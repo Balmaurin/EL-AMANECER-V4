@@ -1,0 +1,18 @@
+
+groups:
+- name: rag_rules
+  rules:
+  - alert: RAGHighP95Latency
+    expr: histogram_quantile(0.95, sum(rate(rag_search_seconds_bucket[5m])) by (le)) > 2
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      description: "p95 de búsqueda > 2s durante 5m"
+  - alert: RAGErrorsSpiking
+    expr: increase(rag_errors_total[5m]) > 10
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      description: "Errores en /ask > 10 en 5m"

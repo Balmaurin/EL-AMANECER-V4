@@ -1,0 +1,26 @@
+branch: universal
+embedder:
+  provider: local
+  model: sentence-transformers/all-MiniLM-L6-v2
+  device: auto  # Usar CUDA si disponible, CPU como fallback
+  batch_size: 32  # Aumentado para entrenamiento enterprise
+chunking:
+  mode: semantic
+  target_words: 220
+  overlap_words: 40
+  min_words: 60
+index:
+  backend: hnsw
+retrieval:
+  top_k: 10
+  method: hybrid  # Añadido: búsqueda híbrida BM25 + vectorial
+  bm25_weight: 0.4
+  semantic_weight: 0.6
+  reranker_enabled: true
+  hybrid_fusion: rrf  # Reciprocal Rank Fusion
+enterprise_config:
+  scaling_enabled: true
+  gpu_acceleration: auto  # Habilitar CUDA acceleration
+  memory_optimization: true
+  distributed_training: false
+  enterprise_sla: true

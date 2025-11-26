@@ -1,0 +1,34 @@
+{
+  "domains": [
+    {
+      "name": "programación",
+      "keywords": ["código", "python", "bug", "error", "programar", "desarrollo", "software", "javascript", "react", "node", "api", "base de datos", "sql", "git", "github"],
+      "description": "Programming and development specialization"
+    },
+    {
+      "name": "medicina",
+      "keywords": ["medicina", "salud", "médico", "tratamiento", "diagnóstico", "síntoma", "enfermedad", "hospital", "clínica", "paciente", "farmaco", "vacuna"],
+      "description": "Medicine and health specialization"
+    },
+    {
+      "name": "inteligencia artificial",
+      "keywords": ["IA", "inteligencia artificial", "machine learning", "algoritmo", "modelo", "neuronal", "deep learning", "datos", "predicción", "clasificación", "nlp", "chatbot"],
+      "description": "Artificial intelligence specialization"
+    },
+    {
+      "name": "negocios",
+      "keywords": ["empresa", "negocio", "marketing", "ventas", "cliente", "estrategia", "finanzas", "inversión", "startup", "emprendimiento", "plan de negocio"],
+      "description": "Business and entrepreneurship specialization"
+    },
+    {
+      "name": "ciencia",
+      "keywords": ["ciencia", "investigación", "experimento", "teoría", "física", "química", "biología", "matemáticas", "estadística", "investigación"],
+      "description": "Science and research specialization"
+    },
+    {
+      "name": "general",
+      "keywords": ["general", "común", "básico", "ayuda", "información", "pregunta"],
+      "description": "General knowledge"
+    }
+  ]
+}

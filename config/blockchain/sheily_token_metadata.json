@@ -1,0 +1,14 @@
+{
+  "name": "Sheily Educational Token",
+  "symbol": "SHEILYS",
+  "description": "Token educativo Web3 para aprendizaje y recompensas",
+  "decimals": 9,
+  "image": "https://sheily.ai/images/sheilys-token.png",
+  "external_url": "https://sheily.ai",
+  "properties": {
+    "educational_token": true,
+    "learn_to_earn": true,
+    "governance_enabled": true,
+    "nft_credentials": true
+  }
+}

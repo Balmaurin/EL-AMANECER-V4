@@ -1,0 +1,66 @@
+{
+  "id": null,
+  "uid": "rag-win-overview",
+  "title": "RAG API — Windows Overview",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "RAG Queries (5m rate)",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(rag_queries_total[5m]))",
+          "legendFormat": "qps",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "gauge",
+      "title": "p95 Search Latency (s)",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(rag_search_seconds_bucket[5m])) by (le))",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Search Latency — avg",
+      "gridPos": {
+        "h": 9,
+        "w": 16,
+        "x": 0,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(rag_search_seconds_sum[5m])) / sum(rate(rag_search_seconds_count[5m]))",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

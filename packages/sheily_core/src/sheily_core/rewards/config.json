@@ -1,0 +1,75 @@
+{
+  "system": {
+    "name": "Sheily AI Rewards System",
+    "version": "1.0.0",
+    "description": "Sistema completo de recompensas Sheilys para aprendizaje incremental"
+  },
+  "vault": {
+    "path": "./rewards/vault",
+    "max_size": 10000,
+    "retention_days": 90,
+    "auto_cleanup": true,
+    "compression": true
+  },
+  "tracker": {
+    "storage_path": "./rewards/sessions",
+    "max_sessions": 1000,
+    "retention_days": 90,
+    "auto_cleanup": true
+  },
+  "reward_factors": {
+    "quality_score": 0.25,
+    "domain_complexity": 0.2,
+    "tokens_complexity": 0.15,
+    "novelty_factor": 0.1,
+    "interaction_depth": 0.15,
+    "contextual_accuracy": 0.15
+  },
+  "domain_complexity_map": {
+    "medicina": 1.3,
+    "ciberseguridad": 1.25,
+    "programación": 1.2,
+    "matemáticas": 1.15,
+    "ciencia": 1.1,
+    "ingeniería": 1.05,
+    "vida_diaria": 0.95,
+    "legal": 1.1,
+    "negocios": 1.05,
+    "educación": 1.0,
+    "deportes": 0.85,
+    "arte": 0.9,
+    "tecnología": 1.1,
+    "entretenimiento": 0.9,
+    "general": 1.0
+  },
+  "optimization": {
+    "adaptive_learning_rate": true,
+    "exploration_decay": 0.99,
+    "regularization": 0.01,
+    "performance_tracking": true,
+    "learning_rate": 0.1,
+    "exploration_rate": 0.2
+  },
+  "quality_thresholds": {
+    "excellent": 0.9,
+    "good": 0.75,
+    "acceptable": 0.6,
+    "poor": 0.4
+  },
+  "contextual_weights": {
+    "semantic_similarity": 0.6,
+    "linguistic_coverage": 0.4,
+    "domain_relevance": 0.3
+  },
+  "reporting": {
+    "auto_reports": true,
+    "report_frequency": "daily",
+    "export_formats": ["json", "html", "csv"],
+    "email_notifications": false
+  },
+  "security": {
+    "encrypt_vault": false,
+    "access_control": true,
+    "audit_logging": true
+  }
+}

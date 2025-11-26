@@ -1,0 +1,29 @@
+{
+  "include": [
+    "sheily_core/",
+    "backend/",
+    "rag_advanced/",
+    "centralized_data/",
+    "centralized_results/"
+  ],
+  "exclude": [
+    "**/__pycache__",
+    "**/node_modules"
+  ],
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": false,
+  "pythonVersion": "3.11",
+  "typeCheckingMode": "basic",
+  "reportUnusedImport": "warning",
+  "reportUnaccessed": "none",
+  "reportUnknownMemberType": "none",
+  "reportUnknownVariableType": "none",
+  "reportUnknownArgumentType": "none",
+  "reportUnknownLambdaType": "none",
+  "reportUnknownParameterType": "none",
+  "reportMissingParameterType": "none",
+  "reportCallInDefaultInitializer": "none",
+  "reportUninitializedInstanceVariable": "none",
+  "reportInvalidStringEscapeSequence": "none",
+  "reportAssertAlwaysTrue": "none"
+}

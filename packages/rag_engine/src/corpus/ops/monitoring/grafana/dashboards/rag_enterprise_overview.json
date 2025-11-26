@@ -1,0 +1,101 @@
+{
+  "id": null,
+  "uid": "rag-enterprise",
+  "title": "RAG Enterprise Overview",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "RAG Queries (total)",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "increase(rag_queries_total[5m])"
+        }
+      ]
+    },
+    {
+      "type": "gauge",
+      "title": "Context Size p95 (chars)",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(rag_context_chars_bucket[5m])) by (le))"
+        }
+      ]
+    },
+    {
+      "type": "bargauge",
+      "title": "Queries by Mode (5m)",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(rag_mode_total[5m])) by (mode)"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Vector Store",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "rag_vector_store"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Lexical Backend",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "rag_lexical_backend"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Vector Backend (local)",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "rag_index_backend"
+        }
+      ]
+    }
+  ],
+  "refresh": "10s",
+  "version": 1
+}

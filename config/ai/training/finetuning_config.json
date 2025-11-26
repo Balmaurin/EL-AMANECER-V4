@@ -1,0 +1,55 @@
+{
+  "model_name": "custom-model",
+  "base_model_path": "./modelsLLM/llama-3.2-3b/Llama-3.2-3B-Instruct-f16.gguf",
+  "training_data": "./data/training/master_dataset.jsonl",
+  "output_dir": "./models/sheily_finetuned",
+  "total_examples": 600,
+  "recommended_epochs": 3,
+  "learning_rate": 5e-5,
+  "batch_size": 8,
+  "max_length": 512,
+  "warmup_steps": 100,
+  "lora_config": {
+    "r": 16,
+    "lora_alpha": 32,
+    "target_modules": [
+      "q_proj",
+      "v_proj",
+      "k_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ],
+    "lora_dropout": 0.1,
+    "bias": "none",
+    "task_type": "CAUSAL_LM"
+  },
+  "training_arguments": {
+    "per_device_train_batch_size": 8,
+    "gradient_accumulation_steps": 4,
+    "num_train_epochs": 3,
+    "learning_rate": 5e-5,
+    "fp16": true,
+    "logging_steps": 50,
+    "save_steps": 500,
+    "eval_steps": 500,
+    "evaluation_strategy": "steps",
+    "save_total_limit": 3,
+    "load_best_model_at_end": true,
+    "metric_for_best_model": "eval_loss",
+    "greater_is_better": false,
+    "report_to": "none",
+    "remove_unused_columns": false,
+    "dataloader_pin_memory": false
+  },
+  "system_specs": {
+    "gpu_memory": "auto",
+    "cpu_cores": "auto",
+    "mixed_precision": true,
+    "gradient_checkpointing": true
+  },
+  "created_timestamp": "2025-11-19T20:30:00Z",
+  "project": "Sheily AI - MCP Phoenix System",
+  "description": "Fine-tuning configuration for complete Sheily project weight training"
+}

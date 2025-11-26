@@ -1,0 +1,26 @@
+# Advanced RAG System Dependencies
+# Install with: pip install -r requirements-rag.txt
+# Security updates: January 2025
+
+# Core RAG components (Security update)
+sentence-transformers==5.1.2  # CRITICAL: Updated from 3.0.1 (RCE vulnerability)
+hnswlib==0.8.0
+
+# Search and indexing
+whoosh==2.7.4
+tantivy==0.21.0
+
+# Data processing
+numpy==1.26.4
+PyYAML==6.0.2
+scikit-learn>=1.4,<2
+
+# Optional: For better PDF/document parsing (Security update)
+pypdf==6.2.0  # HIGH: Updated from 4.3.0 (CVE-2025-55197 DoS)
+pdfplumber==0.11.4
+
+# Existing backend dependencies (if not already installed)
+fastapi==0.121.1
+starlette>=0.40.0  # SECURITY: Updated from 0.43.0 to fix O(n^2) DoS vulnerabilities
+uvicorn==0.32.1
+pydantic==2.10.3

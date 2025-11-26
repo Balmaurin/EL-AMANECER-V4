@@ -1,0 +1,41 @@
+prometheus:
+  port: 8000
+  retention_days: 15
+  scrape_interval: 15s
+  rules:
+    - alert: HighCpuUsage
+      expr: rag_cpu_usage_percent > 80
+      for: 5m
+      labels:
+        severity: warning
+    - alert: HighMemoryUsage
+      expr: rag_memory_usage_bytes > 1e9  # 1GB
+      for: 5m
+      labels:
+        severity: warning
+    - alert: HighErrorRate
+      expr: rate(rag_errors_total[5m]) > 0.1
+      for: 5m
+      labels:
+        severity: critical
+    - alert: HighLatency
+      expr: histogram_quantile(0.95, rag_latency_seconds_bucket) > 2
+      for: 5m
+      labels:
+        severity: warning
+
+tracing:
+  service_name: rag-service
+  jaeger:
+    host: localhost
+    port: 6831
+    sampling_rate: 1.0
+
+resource_monitoring:
+  enabled: true
+  interval: 1.0  # seconds
+  thresholds:
+    cpu_percent: 80
+    memory_bytes: 1000000000  # 1GB
+    io_read_rate: 10000000   # 10MB/s
+    io_write_rate: 10000000  # 10MB/s

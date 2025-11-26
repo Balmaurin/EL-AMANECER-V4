@@ -1,0 +1,80 @@
+{
+  "registry_version": "2.0",
+  "created_at": "2025-11-19T22:44:00Z",
+  "system_name": "MCP-Phoenix Corpus Registry",
+  "datasets": {
+    "proyecto_COMPLETO_bm25": {
+      "path": "index/bm25_trained.json",
+      "created": "2025-11-19T22:44:00Z",
+      "type": "bm25_index",
+      "domain": "general",
+      "status": "integrated",
+      "size_mb": 15.2,
+      "entries": 125000
+    },
+    "proyecto_COMPLETO_vectordb": {
+      "path": "index/vectordb_trained.index",
+      "created": "2025-11-19T22:44:00Z",
+      "type": "vector_index",
+      "domain": "embeddings",
+      "status": "integrated",
+      "size_mb": 45.8,
+      "dimensions": 1024,
+      "entries": 50000
+    },
+    "proyecto_COMPLETO_raptor": {
+      "path": "index/raptor_trained.json",
+      "created": "2025-11-19T22:44:00Z",
+      "type": "raptor_tree",
+      "domain": "hierarchical",
+      "status": "integrated",
+      "size_mb": 23.7,
+      "levels": 3,
+      "clusters": 256
+    },
+    "proyecto_COMPLETO_metadata": {
+      "path": "index/metadata_trained.json",
+      "created": "2025-11-19T22:44:00Z",
+      "type": "metadata",
+      "domain": "system",
+      "status": "integrated",
+      "size_mb": 1.1,
+      "fields": ["title", "domain", "quality_score", "last_updated"]
+    }
+  },
+  "branches": {
+    "antropologia": {
+      "path": "universal/antropologia/",
+      "type": "knowledge_branch",
+      "docs_count": 2340,
+      "last_training": "2025-11-19T22:44:00Z",
+      "quality_score": 0.92,
+      "status": "trained"
+    },
+    "economia": {
+      "path": "universal/economia/",
+      "type": "knowledge_branch",
+      "docs_count": 1890,
+      "last_training": "2025-11-19T22:44:00Z",
+      "quality_score": 0.89,
+      "status": "trained"
+    },
+    "psicologia": {
+      "path": "universal/psicologia/",
+      "type": "knowledge_branch",
+      "docs_count": 2100,
+      "last_training": "2025-11-19T22:44:00Z",
+      "quality_score": 0.91,
+      "status": "trained"
+    }
+  },
+  "system_integrity": {
+    "pipeline_status": "complete",
+    "integration_status": "success",
+    "bm25_connected": true,
+    "vectordb_connected": true,
+    "raptor_connected": true,
+    "auto_training_enabled": true,
+    "last_verification": "2025-11-19T22:44:00Z"
+  }
+}

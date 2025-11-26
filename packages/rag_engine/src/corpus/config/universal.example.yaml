@@ -1,0 +1,96 @@
+# Universal RAG Configuration v4.0.0
+version: "4.0.0"
+branch: "universal"
+
+embedder:
+  model: "BAAI/bge-m3"
+  device: "auto"
+  batch_size: 64
+
+chunking:
+  mode: "semantic"
+  target_words: 220
+  overlap_words: 40
+  min_words: 60
+
+index:
+  backend: "hnsw"
+  faiss_factory: "IVF4096,PQ32"
+  faiss_nprobe: 32
+  bm25_backend: "whoosh"
+  stored_fields:
+    - "chunk_id"
+    - "doc_id"
+    - "title"
+    - "lang"
+    - "tags"
+
+retrieval:
+  top_k: 10
+  rerank_enabled: true
+  rerank_model: "BAAI/bge-reranker-base"
+  fusion_method: "rrf"
+  fusion_weights:
+    faiss: 0.45
+    bm25: 0.25
+    graph: 0.10
+    raptor: 0.10
+    quality: 0.10
+
+# Enterprise features
+enterprise:
+  ingest:
+    workers: 6
+    max_file_mb: 128
+    skip_hidden: true
+  normalize:
+    min_chars: 800
+    min_quality: 0.55
+    dedup:
+      enabled: true
+      jaccard_threshold: 0.88
+      n_perm: 128
+  chunking:
+    max_words: 250
+    overlap_words: 50
+  embedding:
+    batch_size_adapt: true
+  index:
+    bm25_backend: "whoosh"
+    vector_backend: "hnsw"
+
+# External service configuration
+external_index:
+  type: "local"   # local | qdrant | milvus
+  qdrant:
+    host: "127.0.0.1"
+    port: 6333
+    collection: "rag_universal"
+  milvus:
+    host: "127.0.0.1"
+    port: 19530
+    collection: "rag_universal"
+
+# API configuration
+api:
+  rate_limit:
+    requests: 60
+    per_seconds: 60
+  security:
+    require_api_key: true
+    cors_origins: ["*"]
+    max_request_bytes: 1048576
+    timeout_seconds: 20
+  metrics:
+    enabled: true
+    path: "/metrics"
+
+# Logging configuration
+logging:
+  level: "INFO"
+  file: "logs/rag.log"
+  format: "%(asctime)s %(levelname)s [%(name)s] %(message)s"
+
+# Override settings
+overrides:
+  env_prefix: "RAG_"
