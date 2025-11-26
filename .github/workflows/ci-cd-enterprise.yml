@@ -145,17 +145,17 @@ jobs:
     - name: Run Enterprise Blockchain Tests
       run: |
         echo "🔗 Running Enterprise Blockchain Tests..."
-        python -m pytest tests/enterprise/test_blockchain_enterprise.py -v --tb=short --html=tests/results/enterprise/blockchain_report.html --self-contained-html || echo "Blockchain tests completed"
+        python -m pytest tests/enterprise/test_blockchain_enterprise.py -v --tb=short || echo "Blockchain tests completed"
 
     - name: Run Enterprise API Tests
       run: |
         echo "🌐 Running Enterprise API Tests..."
-        python -m pytest tests/enterprise/test_api_enterprise_suites.py -v --tb=short --html=tests/results/enterprise/api_report.html --self-contained-html || echo "API tests completed"
+        python -m pytest tests/enterprise/test_api_enterprise_suites.py -v --tb=short || echo "API tests completed"
 
     - name: Run Enterprise RAG Tests
       run: |
         echo "🧠 Running Enterprise RAG Tests..."
-        python -m pytest tests/enterprise/test_rag_system_enterprise.py -v --tb=short --html=tests/results/enterprise/rag_report.html --self-contained-html || echo "RAG tests completed"
+        python -m pytest tests/enterprise/test_rag_system_enterprise.py -v --tb=short || echo "RAG tests completed"
 
     - name: Run Enterprise Test Orchestrator
       run: |
